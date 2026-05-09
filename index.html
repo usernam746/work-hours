@@ -6,14 +6,14 @@
 <title>勤務時間 簡易計算ツール</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* ---------- Theme: Dark (default) ---------- */
   :root, [data-theme="dark"] {
     --bg: #0F1115;
     --bg-elevated: #181B22;
     --bg-card: #1B1E26;
-    --border-subtle: rgba(255,255,255,0.06);
+    --border-subtle: rgba(255,255,255,0.04);
     --border: rgba(255,255,255,0.10);
     --border-strong: rgba(255,255,255,0.18);
     --text: #E4E6EB;
@@ -21,10 +21,11 @@
     --text-dim: rgba(228,230,235,0.38);
     --accent-work: #5BCDA1;
     --accent-work-bg: rgba(91,205,161,0.12);
-    --accent-over: #F4B860;
-    --accent-over-bg: rgba(244,184,96,0.14);
-    --accent-leave: #7FB1E8;
-    --accent-leave-bg: rgba(127,177,232,0.14);
+    /* (Stoic single-color phase A: --accent-over and --accent-leave merged into --accent-work) */
+    --accent-over: #5BCDA1;
+    --accent-over-bg: rgba(91,205,161,0.12);
+    --accent-leave: #5BCDA1;
+    --accent-leave-bg: rgba(91,205,161,0.12);
     --accent-under: #DCA0A0;
     --accent-under-bg: rgba(220,160,160,0.12);
     --row-divider: rgba(255,255,255,0.04);
@@ -49,44 +50,44 @@
     --hero-accent-line: linear-gradient(90deg, transparent 0%, var(--accent-work) 25%, var(--accent-leave) 75%, transparent 100%);
   }
 
-  /* ---------- Theme: Light (business system) ---------- */
+  /* ---------- Theme: Light (white base) ---------- */
   [data-theme="light"] {
-    --bg: #F5F7FA;
+    --bg: #FFFFFF;
     --bg-elevated: #FFFFFF;
     --bg-card: #FFFFFF;
-    --border-subtle: #E5E8ED;
-    --border: #D9DDE3;
-    --border-strong: #C4CAD2;
-    --text: #2C2E33;
-    --text-muted: #4A4F58;
-    --text-dim: #7A7F87;
+    --border-subtle: #EEEEEE;
+    --border: #E0E0E2;
+    --border-strong: #CCCCCF;
+    --text: #1F2024;
+    --text-muted: #5A5F66;
+    --text-dim: #9CA0A6;
     --accent-work: #2D8264;
     --accent-work-bg: rgba(45,130,100,0.10);
-    --accent-over: #C46B12;
-    --accent-over-bg: #FFF1DD;
-    --accent-leave: #1F5AA0;
-    --accent-leave-bg: rgba(31,90,160,0.10);
+    /* (Stoic single-color phase A: --accent-over and --accent-leave merged into --accent-work) */
+    --accent-over: #2D8264;
+    --accent-over-bg: rgba(45,130,100,0.10);
+    --accent-leave: #2D8264;
+    --accent-leave-bg: rgba(45,130,100,0.10);
     --accent-under: #B8474B;
     --accent-under-bg: #FBE5E5;
     --row-divider: rgba(0,0,0,0.04);
-    /* Panel accent (used for dedup notice / breakdown / chart) */
-    --panel-accent: #95B8D8;
-    --panel-accent-bg: #DCEAF6;
-    /* Soft accents for collapsible breakdown/chart panels */
-    --panel-teal: #A8C8C5;
-    --panel-teal-bg: #E5F0EE;
-    --panel-lav: #BCB0D4;
-    --panel-lav-bg: #ECE6F2;
-    /* Chart bar colors - muted blue-grey palette */
-    --bar-under: #B0B8C7;
-    --bar-even: #8B97AD;
-    --bar-over: #6B7894;
-    --bar-line: #2E70C0;
-    --hero-bg-1: #DCEAF6;
-    --hero-bg-2: #BCDAF0;
-    --hero-border: #95B8D8;
-    --hero-glow: rgba(31,90,160,0.10);
-    --hero-glow-2: rgba(45,130,100,0.08);
+    /* Panel accents: unified neutral grey on white */
+    --panel-accent: #DCDCDF;
+    --panel-accent-bg: #FFFFFF;
+    --panel-teal: #DCDCDF;
+    --panel-teal-bg: #FFFFFF;
+    --panel-lav: #DCDCDF;
+    --panel-lav-bg: #FFFFFF;
+    /* Chart bar colors - neutral grey palette */
+    --bar-under: #D8DADD;
+    --bar-even: #A8ACB2;
+    --bar-over: #6A6E75;
+    --bar-line: #4A4F58;
+    --hero-bg-1: #FFFFFF;
+    --hero-bg-2: #FAFAFA;
+    --hero-border: #E5E5E5;
+    --hero-glow: rgba(0,0,0,0.04);
+    --hero-glow-2: rgba(0,0,0,0.03);
     --hero-accent-line: linear-gradient(90deg, transparent 0%, var(--accent-leave) 25%, var(--accent-work) 75%, transparent 100%);
   }
 
@@ -107,12 +108,169 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     transition: background 0.18s ease, color 0.18s ease;
+    position: relative;
+  }
+  /* "Horizon" — lower half of viewport gets a soft glow, like a lit floor.
+     This sits BEHIND the grid and particles, providing a base ambient layer. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 50%,
+      var(--floor-soft, rgba(180,200,230,0.06)) 75%,
+      var(--floor-strong, rgba(180,200,230,0.18)) 100%
+    );
+  }
+  :root, [data-theme="dark"] {
+    --floor-soft: rgba(180, 200, 230, 0.08);
+    --floor-strong: rgba(180, 200, 230, 0.22);
+  }
+  [data-theme="light"] {
+    --floor-soft: rgba(0, 0, 0, 0.02);
+    --floor-strong: rgba(0, 0, 0, 0.05);
+  }
+  /* Subtle grid lines covering the whole viewport — gives a "data console" feel */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--grid-line, rgba(255,255,255,0.08)) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line, rgba(255,255,255,0.08)) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 50%, transparent 95%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 50%, transparent 95%);
+  }
+  :root, [data-theme="dark"] {
+    --grid-line: rgba(180, 200, 230, 0.08);
+  }
+  [data-theme="light"] {
+    --grid-line: rgba(0, 0, 0, 0.04);
+  }
+  /* Drifting particles container — dots scattered across the viewport,
+     each gently floating and glimmering. */
+  /* Particle container kept solely as a host for shooting stars.
+     The drifting dots have been removed (felt distracting); shooting stars
+     fire only when the calculate button is pressed. */
+  .space-particles {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  /* Shooting stars — long thin streaks that occasionally cross the screen.
+     Hidden by default; triggered briefly on calculate button press. */
+  .space-particles .shooting-star {
+    position: absolute;
+    width: 110px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(200, 230, 255, 0.85) 60%, rgba(255,255,255,0.95) 100%);
+    border-radius: 1px;
+    box-shadow: 0 0 8px rgba(200, 230, 255, 0.7);
+    opacity: 0;
+    transform-origin: right center;
+  }
+  .space-particles .shooting-star.is-flying {
+    animation: shootingStar 1.6s ease-out forwards;
+  }
+  .space-particles .shooting-star:nth-of-type(1) { top: 18%; left: -120px; transform: rotate(18deg); }
+  .space-particles .shooting-star:nth-of-type(2) { top: 52%; left: -120px; transform: rotate(12deg); animation-delay: 0.15s; }
+  .space-particles .shooting-star:nth-of-type(3) { top: 78%; left: -120px; transform: rotate(22deg); animation-delay: 0.30s; }
+  [data-theme="light"] .space-particles .shooting-star {
+    background: linear-gradient(90deg, transparent 0%, rgba(45, 130, 100, 0.55) 60%, rgba(45, 130, 100, 0.85) 100%);
+    box-shadow: 0 0 6px rgba(45, 130, 100, 0.4);
+  }
+  @keyframes shootingStar {
+    0%   { opacity: 0; transform: translateX(0)     rotate(var(--star-angle, 18deg)); }
+    8%   { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(110vw) rotate(var(--star-angle, 18deg)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .space-particles .shooting-star { display: none; }
   }
 
   .container {
-    max-width: 920px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 48px 24px 80px;
+  }
+
+  /* Tool shell — wraps the entire tool (header + sections + footnote)
+     in a single bordered container so the whole tool appears to "stand"
+     as one unit, with a glowing floor beneath it (Linear-style). */
+  .tool-shell {
+    position: relative;
+    background: var(--shell-bg, rgba(20, 24, 32, 0.55));
+    border: 1px solid var(--shell-border, rgba(255, 255, 255, 0.08));
+    border-radius: 18px;
+    padding: 28px 28px 32px;
+    box-shadow:
+      0 50px 100px -30px var(--shell-shadow, rgba(0, 0, 0, 0.55)),
+      0 25px 50px  -20px var(--shell-shadow, rgba(0, 0, 0, 0.35)),
+      inset 0 1px 0 var(--shell-highlight, rgba(255, 255, 255, 0.04));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  /* Floor light beneath the shell — soft elliptical glow that makes the shell
+     appear to be sitting on a lit surface. */
+  .tool-shell::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    width: 130%;
+    max-width: 1200px;
+    height: 240px;
+    margin-top: -50px;
+    background: radial-gradient(
+      ellipse at center top,
+      var(--shell-floor-1, rgba(140, 170, 220, 0.28)) 0%,
+      var(--shell-floor-2, rgba(140, 170, 220, 0.10)) 30%,
+      transparent 65%
+    );
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(24px);
+  }
+  :root, [data-theme="dark"] {
+    --shell-bg: rgba(15, 18, 24, 0.65);
+    --shell-border: rgba(255, 255, 255, 0.08);
+    --shell-shadow: rgba(0, 0, 0, 0.55);
+    --shell-highlight: rgba(255, 255, 255, 0.04);
+    --shell-floor-1: rgba(140, 170, 220, 0.30);
+    --shell-floor-2: rgba(140, 170, 220, 0.10);
+  }
+  [data-theme="light"] {
+    --shell-bg: rgba(255, 255, 255, 0.75);
+    --shell-border: rgba(15, 23, 42, 0.10);
+    --shell-shadow: rgba(15, 23, 42, 0.18);
+    --shell-highlight: rgba(255, 255, 255, 0.6);
+    --shell-floor-1: rgba(0, 0, 0, 0.10);
+    --shell-floor-2: rgba(0, 0, 0, 0.04);
+  }
+  /* Tighten the gap between footnote and container bottom inside shell */
+  .tool-shell .footnote {
+    margin-bottom: 0;
+  }
+  @media (max-width: 600px) {
+    .tool-shell {
+      padding: 18px 14px 22px;
+      border-radius: 14px;
+    }
+    .tool-shell::after {
+      height: 160px;
+      margin-top: -40px;
+    }
   }
 
   /* Hero header */
@@ -121,7 +279,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 20px;
-    margin-bottom: 36px;
+    margin-bottom: 44px;
     padding: 30px 36px 28px;
     background: linear-gradient(135deg, var(--hero-bg-1) 0%, var(--hero-bg-2) 100%);
     border: 1px solid var(--hero-border);
@@ -131,7 +289,7 @@
     isolation: isolate;
     transition: background 0.18s ease, border-color 0.18s ease;
   }
-  /* Top accent line */
+  /* Top accent line (static base gradient) */
   .header::before {
     content: '';
     position: absolute;
@@ -141,8 +299,38 @@
     height: 2px;
     background: var(--hero-accent-line);
     z-index: 1;
+    /* On load, the line "draws" itself from center to both edges */
+    transform: scaleX(0);
+    transform-origin: center;
+    animation: heroLineDraw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
   }
-  /* Decorative glow - top right */
+  /* Traveling light pulse on top of the accent line */
+  .header > .header-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 22%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+    animation: heroLinePulse 6s linear infinite;
+    animation-delay: 1.2s;
+    opacity: 0;
+  }
+  [data-theme="light"] .header > .header-pulse {
+    background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+  }
+  @keyframes heroLineDraw {
+    to { transform: scaleX(1); }
+  }
+  @keyframes heroLinePulse {
+    0%   { left: -25%; opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  /* Decorative glow - top right (now slowly breathing) */
   .header::after {
     content: '';
     position: absolute;
@@ -154,6 +342,11 @@
     pointer-events: none;
     z-index: 0;
     transition: background 0.18s ease;
+    animation: heroGlowBreathe 11s ease-in-out infinite;
+  }
+  @keyframes heroGlowBreathe {
+    0%, 100% { opacity: 1;    transform: scale(1); }
+    50%      { opacity: 0.65; transform: scale(1.08); }
   }
   .header-content {
     flex: 1;
@@ -161,7 +354,7 @@
     position: relative;
     z-index: 2;
   }
-  /* Secondary glow - bottom left, more subtle */
+  /* Secondary glow - bottom left, more subtle, slower breathing offset by half cycle */
   .header-content::before {
     content: '';
     position: absolute;
@@ -172,6 +365,14 @@
     background: radial-gradient(circle, var(--hero-glow-2) 0%, transparent 70%);
     pointer-events: none;
     z-index: -1;
+    animation: heroGlowBreathe 13s ease-in-out infinite;
+    animation-delay: -6.5s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .header::before { animation: none; transform: scaleX(1); }
+    .header > .header-pulse { display: none; }
+    .header::after,
+    .header-content::before { animation: none; }
   }
   .eyebrow {
     font-family: var(--font-mono);
@@ -184,6 +385,9 @@
     align-items: center;
     gap: 10px;
     font-weight: 500;
+    text-shadow:
+      0 0 12px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
   }
   .eyebrow::before {
     content: '';
@@ -196,8 +400,8 @@
     animation: pulse 2.4s ease-in-out infinite;
   }
   @keyframes pulse {
-    0%, 100% { opacity: 0.85; }
-    50% { opacity: 0.45; }
+    0%, 100% { opacity: 1;    box-shadow: 0 0 12px var(--accent-work), 0 0 4px var(--accent-work); transform: scale(1); }
+    50%      { opacity: 0.55; box-shadow: 0 0 6px  var(--accent-work), 0 0 2px var(--accent-work); transform: scale(0.92); }
   }
   @keyframes fadeInUp {
     from {
@@ -222,11 +426,46 @@
   }
   .title {
     font-size: 28px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.005em;
     margin: 0 0 10px;
     color: var(--text);
     line-height: 1.25;
+    position: relative;
+    padding-left: 18px;
+  }
+  /* A: glowing vertical bar on the left of the title */
+  .title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12%;
+    bottom: 12%;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent-work) 0%, var(--accent-leave) 100%);
+    box-shadow: 0 0 10px var(--accent-work), 0 0 4px var(--accent-work);
+  }
+  /* (removed: blinking terminal cursor — felt too noisy in continuous use) */
+  /* B-2: double-layer "ghost" text behind the title for depth.
+     A second copy of the text rendered slightly offset and tinted, sitting behind. */
+  /* (removed — caused double-stack bug; revisit later with a different approach) */
+  /* Letter-by-letter entrance — each character fades in and rises slightly,
+     starting from the left and rippling to the right. */
+  .title .title-char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: titleCharIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+  .title .title-char[data-space] {
+    width: 0.35em;
+  }
+  @keyframes titleCharIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .title .title-char { animation: none; opacity: 1; transform: none; }
   }
   .subtitle {
     font-size: 13px;
@@ -260,14 +499,28 @@
     font-family: var(--font-mono);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    transition: all 0.15s ease;
+    transition: background 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color 0.22s ease,
+                border-color 0.22s ease,
+                box-shadow 0.22s ease,
+                transform 0.18s ease;
+    position: relative;
   }
-  .theme-opt:hover { color: var(--text); }
+  .theme-opt:hover {
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+  .theme-opt:active {
+    transform: translateY(0) scale(0.96);
+  }
   .theme-opt.active {
     background: var(--bg-card);
     color: var(--text);
     border-color: var(--border-subtle);
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .theme-opt.active:hover {
+    transform: none;
   }
 
   /* Sections */
@@ -283,7 +536,7 @@
     background: var(--accent-over-bg);
   }
   
-  .section { margin-bottom: 36px; }
+  .section { margin-bottom: 48px; }
   .section-label {
     font-family: var(--font-jp);
     font-size: 12px;
@@ -292,43 +545,77 @@
     margin-bottom: 14px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 12px;
     font-weight: 500;
   }
-  .section-label::before,
-  .section-label::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--border-subtle);
-  }
+  /* (removed: long horizontal divider lines on both sides — felt too heavy) */
 
   /* Input area */
   textarea.data-input {
     width: 100%;
-    min-height: 160px;
-    max-height: 360px;
-    padding: 14px 16px;
+    min-height: 180px;
+    max-height: 400px;
+    padding: 18px 20px;
     font-family: var(--font-mono);
-    font-size: 11.5px;
-    line-height: 1.6;
-    background: var(--bg-elevated);
-    border: 1px solid var(--accent-over);
-    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.7;
+    background: var(--input-bg, rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--input-border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
     color: var(--text);
     resize: vertical;
     outline: none;
-    transition: border-color 0.15s ease, background 0.18s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+      min-height 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      max-height 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      padding 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.4s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  }
+  /* When the user has triggered calculate, the textarea quietly collapses
+     so the result panel can take focus. Click to re-open. */
+  textarea.data-input.is-collapsed {
+    min-height: 64px;
+    max-height: 64px;
+    padding: 12px 20px;
+    cursor: pointer;
+    opacity: 0.55;
+    overflow: hidden;
+    resize: none;
+  }
+  textarea.data-input.is-collapsed:hover {
+    opacity: 0.85;
+    border-color: var(--input-border-hover, rgba(255, 255, 255, 0.16));
+  }
+  textarea.data-input:hover {
+    border-color: var(--input-border-hover, rgba(255, 255, 255, 0.14));
   }
   textarea.data-input:focus {
-    border-color: var(--accent-over);
-    box-shadow: 0 0 0 3px var(--accent-over-bg);
+    border-color: var(--accent-work);
+    box-shadow:
+      0 0 0 3px var(--accent-work-bg),
+      0 0 24px -4px var(--accent-work),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
-  textarea.data-input::placeholder { color: var(--text-dim); }
-  /* LIGHT theme: switch input background to blue, keep amber border */
-  [data-theme="light"] textarea.data-input {
-    background: var(--panel-accent-bg);
+  textarea.data-input::placeholder {
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-style: italic;
+    opacity: 0.6;
+  }
+  :root, [data-theme="dark"] {
+    --input-bg: rgba(0, 0, 0, 0.28);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-border-hover: rgba(255, 255, 255, 0.16);
+  }
+  [data-theme="light"] {
+    --input-bg: rgba(15, 23, 42, 0.04);
+    --input-border: rgba(15, 23, 42, 0.10);
+    --input-border-hover: rgba(15, 23, 42, 0.18);
   }
 
   /* Controls */
@@ -338,7 +625,58 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 16px;
-    margin-top: 16px;
+    margin-top: 14px;
+  }
+  /* Settings toggle button — collapsed control entry point */
+  .settings-toggle {
+    font-family: var(--font-jp);
+    font-size: 12.5px;
+    padding: 6px 12px 6px 10px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+  .settings-toggle:hover {
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--row-divider);
+  }
+  .settings-toggle .settings-icon {
+    font-size: 13px;
+    line-height: 1;
+  }
+  .settings-toggle .settings-caret {
+    font-size: 10px;
+    line-height: 1;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .settings-toggle[aria-expanded="true"] .settings-caret {
+    transform: rotate(180deg);
+  }
+  /* Settings panel — toggle group when expanded */
+  .toggle-group#settings-panel {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--row-divider);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    animation: settingsPanelIn 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* HTML's hidden attribute must override the toggle-group display:flex below */
+  .toggle-group[hidden] { display: none; }
+  @keyframes settingsPanelIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toggle-group#settings-panel { animation: none; }
+    .settings-toggle .settings-caret { transition: none; }
   }
   .toggle-group {
     display: flex;
@@ -367,7 +705,7 @@
     border-radius: 10px;
     position: relative;
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: background 0.22s ease, border-color 0.22s ease;
     flex-shrink: 0;
   }
   .toggle-group input[type="checkbox"]::before {
@@ -379,7 +717,17 @@
     height: 12px;
     background: var(--text-muted);
     border-radius: 50%;
-    transition: all 0.18s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: left 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.22s ease,
+                box-shadow 0.22s ease,
+                transform 0.18s ease;
+  }
+  .toggle-group input[type="checkbox"]:hover::before {
+    transform: scale(1.06);
+  }
+  .toggle-group input[type="checkbox"]:active::before {
+    transform: scale(0.92);
   }
   .toggle-group input[type="checkbox"]:checked {
     background: var(--accent-work-bg);
@@ -388,6 +736,7 @@
   .toggle-group input[type="checkbox"]:checked::before {
     left: 16px;
     background: var(--accent-work);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 6px var(--accent-work);
   }
 
   .button-group { display: flex; gap: 8px; }
@@ -400,16 +749,81 @@
     border: 1px solid var(--border);
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background 0.18s ease,
+                border-color 0.18s ease,
+                box-shadow 0.18s ease,
+                filter 0.18s ease,
+                color 0.18s ease;
+    position: relative;
+    overflow: hidden;
   }
-  button:hover { border-color: var(--border-strong); background: var(--row-divider); }
-  button:active { transform: scale(0.98); }
+  button:hover {
+    border-color: var(--border-strong);
+    background: var(--row-divider);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  }
+  [data-theme="light"] button:hover {
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+  }
+  button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+  }
+  /* Primary button shares the visual language of the net-overtime cell:
+     gradient bg, glowing border, subtle inner highlight — the same "this matters" treatment. */
   button.primary {
-    background: var(--accent-over-bg);
+    background:
+      linear-gradient(135deg, var(--accent-over-bg) 0%, transparent 70%),
+      var(--accent-over-bg);
     border-color: var(--accent-over);
     color: var(--accent-over);
+    box-shadow:
+      0 0 24px -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
-  button.primary:hover { background: var(--accent-over-bg); filter: brightness(1.1); }
+  button.primary:hover {
+    background:
+      linear-gradient(135deg, var(--accent-over-bg) 0%, transparent 70%),
+      var(--accent-over-bg);
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+    box-shadow:
+      0 8px 28px -6px var(--accent-over),
+      0 0 36px -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  [data-theme="light"] button.primary {
+    box-shadow:
+      0 0 18px -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  [data-theme="light"] button.primary:hover {
+    box-shadow:
+      0 6px 18px -4px var(--accent-over),
+      0 0 24px -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  /* Ripple effect: spawned via JS as a child element on click */
+  button .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    background: currentColor;
+    opacity: 0.28;
+    pointer-events: none;
+    animation: rippleExpand 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+  @keyframes rippleExpand {
+    to {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button .ripple { display: none; }
+  }
 
   /* Dedupe notice */
   .dedup-notice {
@@ -444,6 +858,55 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px;
   }
+  /* Result entrance animation: cards fade in + slide up sequentially */
+  @keyframes resultCardIn {
+    0%   { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  #results .stat-card,
+  #results .ot-breakdown,
+  #results .dedup-notice {
+    animation: resultCardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  #results .stat-card:nth-of-type(1) { animation-delay: 0.05s; }
+  #results .stat-card:nth-of-type(2) { animation-delay: 0.15s; }
+  #results .stat-card:nth-of-type(3) { animation-delay: 0.25s; }
+  #results .ot-breakdown { animation-delay: 0.40s; }
+  @media (prefers-reduced-motion: reduce) {
+    #results .stat-card,
+    #results .ot-breakdown,
+    #results .dedup-notice {
+      animation: none;
+    }
+  }
+  /* Calculate button press feedback */
+  @keyframes btnPress {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+  }
+  button.primary.is-pressed {
+    animation: btnPress 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* Calculating spinner inside button */
+  button.primary.is-calculating {
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  button.primary .calc-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border: 1.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: -1px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
   .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
@@ -469,16 +932,44 @@
     left: 0;
     width: 3px;
     height: 100%;
-    background: var(--accent-work);
+    background: linear-gradient(180deg, var(--card-accent, var(--accent-work)) 0%, var(--card-accent, var(--accent-work)) 30%, transparent 100%);
     opacity: 0;
-    transition: width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s ease;
   }
-  .stat-card:hover::before { width: 4px; }
-  .stat-card.accent-work::before { background: var(--accent-work); opacity: 1; }
-  .stat-card.accent-over::before { background: var(--accent-over); opacity: 1; }
-  .stat-card.accent-leave::before { background: var(--accent-leave); opacity: 1; }
-  .stat-card.accent-neutral::before { background: var(--text-dim); opacity: 1; }
+  .stat-card:hover::before { width: 4px; opacity: 1 !important; }
+  .stat-card.accent-work    { --card-accent: var(--accent-work); }
+  .stat-card.accent-over    { --card-accent: var(--accent-over); }
+  .stat-card.accent-leave   { --card-accent: var(--accent-leave); }
+  .stat-card.accent-neutral { --card-accent: var(--text-dim); }
+  .stat-card.accent-work::before,
+  .stat-card.accent-over::before,
+  .stat-card.accent-leave::before,
+  .stat-card.accent-neutral::before { opacity: 1; }
 
+  /* Inner accent bar to the left of the value (a thin glowing pillar) */
+  .stat-value-wrap {
+    position: relative;
+    padding-left: 10px;
+  }
+  .stat-value-wrap::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6%;
+    bottom: 6%;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--card-accent, var(--accent-work));
+    box-shadow: 0 0 6px var(--card-accent, var(--accent-work));
+    opacity: 0.65;
+    transition: opacity 0.22s ease, box-shadow 0.22s ease;
+  }
+  .stat-card:hover .stat-value-wrap::before {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--card-accent, var(--accent-work));
+  }
+
+  /* Label with leading marker dot/icon */
   .stat-label {
     font-size: 10.5px;
     font-family: var(--font-mono);
@@ -487,15 +978,53 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .stat-label::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--card-accent, var(--accent-work));
+    box-shadow: 0 0 4px var(--card-accent, var(--accent-work));
+    flex-shrink: 0;
+    opacity: 0.85;
   }
   .stat-value {
-    font-size: 26px;
-    font-weight: 500;
+    font-size: 32px;
+    font-weight: 600;
     margin: 0;
     color: var(--text);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     line-height: 1.15;
+    font-family: var(--font-mono);
+    text-shadow: 0 0 6px var(--card-accent-glow, transparent);
+    transition: text-shadow 0.22s ease, color 0.22s ease;
+  }
+  /* Subdue the unit (時間・日・分) so the number stands out */
+  .stat-value .stat-unit {
+    font-family: var(--font-jp);
+    font-size: 0.7em;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 1px;
+    letter-spacing: 0;
+  }
+  /* Per-card glow tint (used softly at rest, stronger on hover) */
+  .stat-card.accent-work    { --card-accent-glow: rgba(91, 205, 161, 0.18); }
+  .stat-card.accent-over    { --card-accent-glow: rgba(244, 184, 96, 0.18); }
+  .stat-card.accent-leave   { --card-accent-glow: rgba(127, 177, 232, 0.18); }
+  .stat-card.accent-neutral { --card-accent-glow: rgba(160, 168, 180, 0.16); }
+  [data-theme="light"] .stat-card.accent-work    { --card-accent-glow: rgba(0, 0, 0, 0.04); }
+  [data-theme="light"] .stat-card.accent-over    { --card-accent-glow: rgba(0, 0, 0, 0.04); }
+  [data-theme="light"] .stat-card.accent-leave   { --card-accent-glow: rgba(0, 0, 0, 0.04); }
+  [data-theme="light"] .stat-card.accent-neutral { --card-accent-glow: rgba(0, 0, 0, 0.03); }
+  .stat-card:hover .stat-value {
+    text-shadow: 0 0 12px var(--card-accent, var(--accent-work)),
+                 0 0 2px var(--card-accent, var(--accent-work));
   }
   .stat-sub {
     font-size: 11px;
@@ -538,7 +1067,7 @@
 
   /* Overtime breakdown panel */
   .ot-breakdown {
-    margin-top: 20px;
+    margin-top: 28px;
     background: var(--bg-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: 5px;
@@ -591,17 +1120,71 @@
   }
   .ot-cell.pos { border-color: var(--accent-over-bg); }
   .ot-cell.neg { border-color: var(--accent-under-bg); }
-  .ot-cell.eq  { border-color: var(--accent-over); background: var(--accent-over-bg); }
+  /* The net overtime cell — keeps the same size as siblings (so the row's
+     vertical rhythm stays intact), but gets a stronger visual weight via
+     gradient bg, glowing border, and subtle text shadow. */
+  /* Net-overtime cell's glow gently breathes — adds a quiet "this is alive"
+     pulse to the main result. Implemented via @property so the box-shadow blur
+     can be animated as a CSS variable. */
+  @property --net-glow-blur {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+  .ot-cell.eq {
+    border-color: var(--accent-over);
+    background:
+      linear-gradient(135deg, var(--accent-over-bg) 0%, transparent 70%),
+      var(--accent-over-bg);
+    box-shadow:
+      0 0 0 1px var(--accent-over-bg),
+      0 0 var(--net-glow-blur) -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: netGlowBreathe 6s ease-in-out infinite;
+  }
+  @keyframes netGlowBreathe {
+    0%, 100% { --net-glow-blur: 18px; }
+    50%      { --net-glow-blur: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ot-cell.eq { animation: none; }
+  }
+  .ot-cell.eq:hover {
+    box-shadow:
+      0 0 0 1px var(--accent-over),
+      0 8px 28px -6px var(--accent-over),
+      0 0 36px -8px var(--accent-over),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    background:
+      linear-gradient(135deg, var(--accent-over-bg) 0%, transparent 70%),
+      var(--accent-over-bg);
+  }
   .ot-num {
-    font-size: 18px;
-    font-weight: 500;
+    font-size: 20px;
+    font-weight: 600;
     margin: 0;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
+    font-family: var(--font-mono);
   }
-  .ot-cell.pos .ot-num { color: var(--accent-over); }
-  .ot-cell.neg .ot-num { color: var(--accent-under); }
-  .ot-cell.eq  .ot-num { color: var(--accent-over); }
+  .ot-cell.pos .ot-num {
+    color: var(--accent-over);
+    text-shadow:
+      0 0 12px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+  }
+  .ot-cell.neg .ot-num {
+    color: var(--accent-under);
+    text-shadow:
+      0 0 12px var(--accent-under),
+      0 0 4px var(--accent-under-bg);
+  }
+  .ot-cell.eq  .ot-num {
+    color: var(--accent-over);
+    text-shadow:
+      0 0 12px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+  }
   .ot-meta {
     font-size: 10.5px;
     color: var(--text-dim);
@@ -913,7 +1496,7 @@
 
   /* Footer */
   .footnote {
-    margin-top: 32px;
+    margin-top: 44px;
     padding-top: 20px;
     border-top: 1px solid var(--border-subtle);
     font-size: 11px;
@@ -959,16 +1542,37 @@
     font-weight: 500;
     text-transform: none;
     user-select: none;
-    transition: color 0.15s ease, opacity 0.15s ease;
+    text-shadow:
+      0 0 12px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+    transition: color 0.15s ease, opacity 0.15s ease, text-shadow 0.22s ease;
   }
-  .copy-hint-link:hover { opacity: 0.75; }
+  .copy-hint-link:hover {
+    opacity: 1;
+    text-shadow:
+      0 0 18px var(--accent-work),
+      0 0 8px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+  }
+  /* Kintai-Plus link — uses the same green-glow visual language as the
+     net-overtime cell and the primary button (the "this is interactive / matters" cue). */
   .kintai-link {
     color: var(--accent-leave);
     text-decoration: underline;
     text-underline-offset: 2px;
-    transition: opacity 0.15s ease;
+    text-shadow:
+      0 0 12px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+    transition: text-shadow 0.22s ease, color 0.18s ease, opacity 0.15s ease;
   }
-  .kintai-link:hover { opacity: 0.75; }
+  .kintai-link:hover {
+    color: var(--accent-work);
+    text-shadow:
+      0 0 18px var(--accent-work),
+      0 0 8px var(--accent-work),
+      0 0 4px var(--accent-work-bg);
+    opacity: 1;
+  }
   .kintai-link:visited { color: var(--accent-leave); }
   .copy-modal {
     display: none;
@@ -1182,16 +1786,147 @@
     }
   }
 
+  /* ---------- LIGHT theme: glow toning (white base) ----------
+     White base does not flatter color glows or large dark radial blurs.
+     Replace these with crisp borders + minimal shadow for a clean look. */
+
+  /* A. Header decorative radial blurs — appear as smudges on white */
+  [data-theme="light"] .header::after,
+  [data-theme="light"] .header-content::before {
+    display: none;
+  }
+
+  /* B. Net-overtime cell: white bg + neutral border, green text only */
+  [data-theme="light"] .ot-cell.eq {
+    animation: none;
+    background: var(--bg-card);
+    border-color: var(--border-subtle);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  [data-theme="light"] .ot-cell.eq:hover {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow:
+      0 4px 12px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  /* C. stat-card hover: drop the neon text glow */
+  [data-theme="light"] .stat-card:hover .stat-value {
+    text-shadow: none;
+  }
+
+  /* D. ot-num text-shadow: drop colored halos */
+  [data-theme="light"] .ot-cell.pos .ot-num,
+  [data-theme="light"] .ot-cell.eq  .ot-num,
+  [data-theme="light"] .ot-cell.neg .ot-num {
+    text-shadow: none;
+  }
+
+  /* E. Textarea focus: keep crisp ring, drop 24px outer halo */
+  [data-theme="light"] textarea.data-input:focus {
+    box-shadow:
+      0 0 0 3px var(--accent-work-bg),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  /* F. Primary button: white bg + neutral border + green text only */
+  [data-theme="light"] button.primary {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--accent-over);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  [data-theme="light"] button.primary:hover {
+    background: var(--bg-card);
+    border-color: var(--border-strong);
+    box-shadow:
+      0 3px 10px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* G. Header eyebrow ("Kintai Analytics") — drop text glow, keep dot but flatten */
+  [data-theme="light"] .eyebrow {
+    text-shadow: none;
+  }
+  [data-theme="light"] .eyebrow::before {
+    box-shadow: none;
+    animation: pulse-flat 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse-flat {
+    0%, 100% { opacity: 1;    transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.92); }
+  }
+
+  /* H. "コピー方法を見る" link — drop green glow */
+  [data-theme="light"] .copy-hint-link,
+  [data-theme="light"] .copy-hint-link:hover {
+    text-shadow: none;
+  }
+
+  /* I. 勤怠管理Plus link — drop green glow */
+  [data-theme="light"] .kintai-link,
+  [data-theme="light"] .kintai-link:hover {
+    text-shadow: none;
+  }
+
+  /* J. Vertical accent bars (4+inner bars) — drop colored bars on white base */
+  /* J-1. Title left bar (green gradient + glow) */
+  [data-theme="light"] .title::before {
+    display: none;
+  }
+  [data-theme="light"] .title {
+    padding-left: 0;
+  }
+  /* J-2. Stat-card outer left bar (3px full-height, colored) — 3 cards */
+  [data-theme="light"] .stat-card::before {
+    display: none;
+  }
+  /* J-3. Stat-card inner value bar (2px, glow) — would be exposed once outer is gone */
+  [data-theme="light"] .stat-value-wrap::before {
+    display: none;
+  }
+  [data-theme="light"] .stat-value-wrap {
+    padding-left: 0;
+  }
+
+  /* K. Tool-shell — solid pure white, no gradients, no floor bleed.
+     Forces fully opaque #FFFFFF (default --shell-bg is 0.75 alpha which
+     lets the body bottom gradient bleed through), and hides the
+     ::after floor-light pseudo that bleeds into the bottom of the shell. */
+  [data-theme="light"] .tool-shell {
+    background: #FFFFFF;
+    box-shadow:
+      0 50px 100px -30px var(--shell-shadow),
+      0 25px 50px  -20px var(--shell-shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+  [data-theme="light"] .tool-shell::after {
+    display: none;
+  }
+
 </style>
 </head>
 <body>
 
+<div class="space-particles" aria-hidden="true">
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+</div>
+
 <div class="container">
 
+  <div class="tool-shell">
+
   <header class="header">
+    <div class="header-pulse" aria-hidden="true"></div>
     <div class="header-content">
-      <div class="eyebrow">Timecard Analytics · 勤怠集計</div>
-      <h1 class="title">勤務時間 簡易計算ツール</h1>
+      <div class="eyebrow">Kintai Analytics</div>
+      <h1 class="title">
+        <span class="title-char" style="animation-delay: 0.05s">勤</span><span class="title-char" style="animation-delay: 0.10s">務</span><span class="title-char" style="animation-delay: 0.15s">時</span><span class="title-char" style="animation-delay: 0.20s">間</span><span class="title-char" data-space style="animation-delay: 0.25s"></span><span class="title-char" style="animation-delay: 0.30s">簡</span><span class="title-char" style="animation-delay: 0.35s">易</span><span class="title-char" style="animation-delay: 0.40s">計</span><span class="title-char" style="animation-delay: 0.45s">算</span><span class="title-char" style="animation-delay: 0.50s">ツ</span><span class="title-char" style="animation-delay: 0.55s">ー</span><span class="title-char" style="animation-delay: 0.60s">ル</span>
+      </h1>
       <p class="subtitle">データを貼り付けて計算ボタンを押すと、各項目を集計します。「9.27」は9時間27分として読み取ります。</p>
     </div>
     <div class="theme-switch" role="group" aria-label="テーマ切替">
@@ -1209,37 +1944,39 @@
     </div>
     <textarea id="att-input" class="data-input" spellcheck="false" placeholder="勤怠データを貼り付け..."></textarea>
     <div class="controls">
-      <div class="toggle-group">
-        <div class="toggle-item">
-          <input type="checkbox" id="opt-paid-leave" checked>
-          <label for="opt-paid-leave">有休・特休・BD休を集計に含める</label>
-        </div>
-        <div class="toggle-item">
-          <input type="checkbox" id="opt-dedupe" checked>
-          <label for="opt-dedupe">重複日付を除去（最新を採用）</label>
-        </div>
-      </div>
+      <button type="button" class="settings-toggle" onclick="toggleSettings()" aria-expanded="false" aria-controls="settings-panel">
+        <span class="settings-icon" aria-hidden="true">⚙</span><span>詳細設定</span><span class="settings-caret" aria-hidden="true">▾</span>
+      </button>
       <div class="button-group">
         <button onclick="clearInput()">クリア</button>
         <button class="primary" onclick="calculate()">計算する</button>
       </div>
     </div>
-  </section>
-
-  <section class="section">
-    <div class="section-label">集計結果</div>
-    <div id="results">
-      <div class="empty">データを貼り付けて「計算する」を押してください。</div>
+    <div class="toggle-group" id="settings-panel" hidden>
+      <div class="toggle-item">
+        <input type="checkbox" id="opt-paid-leave" checked>
+        <label for="opt-paid-leave">有休・特休・BD休を集計に含める</label>
+      </div>
+      <div class="toggle-item">
+        <input type="checkbox" id="opt-dedupe" checked>
+        <label for="opt-dedupe">重複日付を除去（最新を採用）</label>
+      </div>
     </div>
   </section>
 
-  <div class="footnote">
+  <section class="section" id="results-section" hidden>
+    <div id="results"></div>
+  </section>
+
+  <div class="footnote" id="footnote" hidden>
     集計ロジック: <code>労働合計 = 各日の最後のH.MM値</code> / <code>差引残業 = 労働合計 − (出勤日数 × 8h)</code><br>
     判定キーワード: <code>公休</code> / <code>有休・有給・BD休・特休・慶弔・代休</code><br>
     深夜時間: 位置(携帯)の打刻時刻から <code>22:00以降</code> および <code>05:00以前</code> の労働分を算出（深夜所定 + 深夜所定外 + 深夜残業 の合計に相当）。<br>
     重複処理: 同じ日付（MM/DD）が複数回入力された場合、入力順で<strong>最後</strong>のものを採用します。<br>
     入力データ・テーマ設定はブラウザ内に保存され、次回開いた時に自動復元されます。<span class="save-status" id="save-indicator"></span>
   </div>
+
+  </div><!-- /.tool-shell -->
 
 </div>
 
@@ -1372,23 +2109,27 @@
   // ============================================================
   // Formatters
   // ============================================================
-  function fmtHM(minutes) {
-    if (minutes === 0) return '0時間';
+  // rich=true: wrap units (時間/分/日) in <span class="stat-unit"> for typography styling.
+  // Used in stat-card values where we want the number to dominate visually.
+  function fmtHM(minutes, rich = false) {
+    const u = (s) => rich ? `<span class="stat-unit">${s}</span>` : s;
+    if (minutes === 0) return `0${u('時間')}`;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    if (h === 0) return `${m}分`;
-    if (m === 0) return `${h}時間`;
-    return `${h}時間${String(m).padStart(2,'0')}分`;
+    if (h === 0) return `${m}${u('分')}`;
+    if (m === 0) return `${h}${u('時間')}`;
+    return `${h}${u('時間')}${String(m).padStart(2,'0')}${u('分')}`;
   }
 
-  function fmtDaysHours(minutes) {
+  function fmtDaysHours(minutes, rich = false) {
+    const u = (s) => rich ? `<span class="stat-unit">${s}</span>` : s;
     const days = Math.floor(minutes / 480);
     const remMin = minutes % 480;
     const h = Math.floor(remMin / 60);
     const m = remMin % 60;
-    let result = `${days}日`;
-    if (h > 0) result += `<span class="value-space"> </span>${h}時間`;
-    if (m > 0) result += `<span class="value-space"> </span>${String(m).padStart(2,'0')}分`;
+    let result = `${days}${u('日')}`;
+    if (h > 0) result += `<span class="value-space"> </span>${h}${u('時間')}`;
+    if (m > 0) result += `<span class="value-space"> </span>${String(m).padStart(2,'0')}${u('分')}`;
     return result;
   }
 
@@ -1397,6 +2138,10 @@
   // ============================================================
   function render(parsed, dupReport, includePaid) {
     const wrap = document.getElementById('results');
+    const section = document.getElementById('results-section');
+    if (section) section.hidden = false;
+    const footnote = document.getElementById('footnote');
+    if (footnote) footnote.hidden = false;
     const workDays = parsed.filter(d => d.workMinutes > 0);
     const usable = includePaid ? workDays : workDays.filter(d => !d.isPaidLeave);
 
@@ -1436,17 +2181,23 @@
       <div class="stats">
         <div class="stat-card accent-work">
           <p class="stat-label">労働合計</p>
-          <p class="stat-value">${fmtHM(totalMin)}</p>
+          <div class="stat-value-wrap">
+            <p class="stat-value" data-count-type="hm" data-count-target="${totalMin}">${fmtHM(totalMin, true)}</p>
+          </div>
           <p class="stat-sub">${(totalMin/60).toFixed(1)} 時間</p>
         </div>
         <div class="stat-card accent-neutral">
           <p class="stat-label">8時間換算</p>
-          <p class="stat-value">${fmtDaysHours(totalMin)}</p>
+          <div class="stat-value-wrap">
+            <p class="stat-value" data-count-type="daysHours" data-count-target="${totalMin}">${fmtDaysHours(totalMin, true)}</p>
+          </div>
           <p class="stat-sub">8時間 = 1日</p>
         </div>
         <div class="stat-card accent-leave">
           <p class="stat-label">出勤日数</p>
-          <p class="stat-value">${attendanceCount}<span class="value-space"> </span>日</p>
+          <div class="stat-value-wrap">
+            <p class="stat-value" data-count-type="days" data-count-target="${attendanceCount}">${attendanceCount}<span class="stat-unit">日</span></p>
+          </div>
           <p class="stat-sub">実出勤 ${realAttendCount}日 / 有休等 ${paidLeaveCount}日${includePaid ? '' : '（除外中）'}</p>
         </div>
       </div>
@@ -1455,17 +2206,17 @@
         <p class="ot-label">残業の計算内訳（${attendanceCount}日 × 8時間 = ${fmtHM(expectedMin)} を基準）</p>
         <div class="ot-formula">
           <div class="ot-cell pos">
-            <p class="ot-num">+ ${fmtHM(grossOverMin)}</p>
+            <p class="ot-num" data-count-type="hm-signed" data-count-sign="+" data-count-target="${grossOverMin}">+ ${fmtHM(grossOverMin)}</p>
             <p class="ot-meta">8h超過の合計（${overDayCount}日）</p>
           </div>
           <div class="ot-op">−</div>
           <div class="ot-cell neg">
-            <p class="ot-num">− ${fmtHM(grossUnderMin)}</p>
+            <p class="ot-num" data-count-type="hm-signed" data-count-sign="−" data-count-target="${grossUnderMin}">− ${fmtHM(grossUnderMin)}</p>
             <p class="ot-meta">8h不足の合計（${underDayCount}日）</p>
           </div>
           <div class="ot-op">=</div>
           <div class="ot-cell eq">
-            <p class="ot-num">${netOvertimeMin >= 0 ? '+ ' : '− '}${fmtHM(Math.abs(netOvertimeMin))}</p>
+            <p class="ot-num" data-count-type="hm-signed" data-count-sign="${netOvertimeMin >= 0 ? '+' : '−'}" data-count-target="${Math.abs(netOvertimeMin)}">${netOvertimeMin >= 0 ? '+ ' : '− '}${fmtHM(Math.abs(netOvertimeMin))}</p>
             <p class="ot-meta">差引残業（net）</p>
           </div>
         </div>
@@ -1648,6 +2399,80 @@
   // ============================================================
   // Public API
   // ============================================================
+  // Animate a number counting up from 0 to target value over a given duration.
+  // The element's text is replaced via a formatter callback every frame.
+  function animateCountUp(el, targetMin, formatter, duration = 800) {
+    if (!el) return;
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / duration);
+      // easeOutCubic for natural deceleration
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.round(targetMin * eased);
+      el.innerHTML = formatter(current);
+      if (t < 1) requestAnimationFrame(tick);
+      else el.innerHTML = formatter(targetMin);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Run count-up on all stat-value elements that have data-count attributes.
+  // Each card's count-up starts at slightly different times to match
+  // its CSS slide-in delay, giving a "results stream in" feel.
+  function runCountUps() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return; // skip animation, the rendered text is already final
+    const cards = document.querySelectorAll('#results .stats .stat-card');
+    // First pass: zero out all values immediately so users see them start from 0
+    cards.forEach((card) => {
+      const el = card.querySelector('.stat-value[data-count-type]');
+      if (!el) return;
+      const type = el.dataset.countType;
+      if (type === 'hm') el.innerHTML = fmtHM(0, true);
+      else if (type === 'daysHours') el.innerHTML = fmtDaysHours(0, true);
+      else if (type === 'days') el.innerHTML = `0<span class="stat-unit">日</span>`;
+    });
+    // Second pass: schedule the count-up animations
+    cards.forEach((card, idx) => {
+      const el = card.querySelector('.stat-value[data-count-type]');
+      if (!el) return;
+      const type = el.dataset.countType;
+      const targetMin = parseInt(el.dataset.countTarget, 10);
+      if (isNaN(targetMin)) return;
+      // Match the CSS animation-delay for cards: 50ms, 150ms, 250ms
+      const delayMs = 50 + idx * 100;
+      setTimeout(() => {
+        if (type === 'hm') {
+          animateCountUp(el, targetMin, (m) => fmtHM(m, true));
+        } else if (type === 'daysHours') {
+          animateCountUp(el, targetMin, (m) => fmtDaysHours(m, true));
+        } else if (type === 'days') {
+          animateCountUp(el, targetMin, (n) => `${n}<span class="stat-unit">日</span>`);
+        }
+      }, delayMs);
+    });
+
+    // Count-up for the overtime breakdown cells (with leading sign +/−).
+    // Triggered shortly after the breakdown panel slides in (CSS delay 400ms).
+    const otCells = document.querySelectorAll('#results .ot-breakdown .ot-num[data-count-type="hm-signed"]');
+    // First pass: zero out all values
+    otCells.forEach((el) => {
+      const sign = el.dataset.countSign || '+';
+      el.innerHTML = `${sign} ${fmtHM(0)}`;
+    });
+    // Second pass: schedule animation slightly after the panel finishes sliding in
+    otCells.forEach((el, idx) => {
+      const targetMin = parseInt(el.dataset.countTarget, 10);
+      if (isNaN(targetMin)) return;
+      const sign = el.dataset.countSign || '+';
+      const delayMs = 450 + idx * 80;
+      setTimeout(() => {
+        animateCountUp(el, targetMin, (m) => `${sign} ${fmtHM(m)}`);
+      }, delayMs);
+    });
+  }
+
   window.calculate = function() {
     const text = document.getElementById('att-input').value;
     const includePaid = document.getElementById('opt-paid-leave').checked;
@@ -1662,14 +2487,72 @@
       dupReport = result.dupReport;
     }
 
+    // After a successful calculation, gently collapse the input area so the
+    // result panel can take focus. Only when there's actually parsed content;
+    // otherwise the user likely wants to fix their input.
+    const collapseInput = () => {
+      if (parsed.length > 0) {
+        const ta = document.getElementById('att-input');
+        if (ta) ta.classList.add('is-collapsed');
+      }
+    };
+
+    // Visual feedback on the primary button
+    const btn = document.querySelector('button.primary');
+    if (btn) {
+      btn.classList.remove('is-pressed');
+      // force reflow so the animation can replay on consecutive clicks
+      void btn.offsetWidth;
+      btn.classList.add('is-pressed');
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduce) {
+        triggerShootingStars();
+        const original = btn.innerHTML;
+        btn.classList.add('is-calculating');
+        btn.innerHTML = '<span class="calc-spinner"></span>計算中';
+        setTimeout(() => {
+          btn.classList.remove('is-calculating');
+          btn.innerHTML = original;
+          render(parsed, dupReport, includePaid);
+          runCountUps();
+          collapseInput();
+          saveState();
+        }, 220);
+        return;
+      }
+    }
+
     render(parsed, dupReport, includePaid);
+    runCountUps();
+    collapseInput();
     saveState();
   };
 
+  // Fire shooting stars across the screen — used as a one-shot accent
+  // when the user presses the calculate button.
+  function triggerShootingStars() {
+    const stars = document.querySelectorAll('.space-particles .shooting-star');
+    stars.forEach((star) => {
+      star.classList.remove('is-flying');
+      // force reflow so the animation can replay on consecutive triggers
+      void star.offsetWidth;
+      star.classList.add('is-flying');
+    });
+  }
+
   window.clearInput = function() {
     if (!confirm('入力データと結果をクリアしますか？（テーマ設定は保持されます）')) return;
-    document.getElementById('att-input').value = '';
-    document.getElementById('results').innerHTML = '<div class="empty">データを貼り付けて「計算する」を押してください。</div>';
+    const ta = document.getElementById('att-input');
+    if (ta) {
+      ta.value = '';
+      ta.classList.remove('is-collapsed');
+    }
+    document.getElementById('results').innerHTML = '';
+    const section = document.getElementById('results-section');
+    if (section) section.hidden = true;
+    const footnote = document.getElementById('footnote');
+    if (footnote) footnote.hidden = true;
     saveState();
   };
 
@@ -1681,6 +2564,23 @@
     var el = document.getElementById('copyExampleBox');
     if (!el) return;
     el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
+  };
+
+  // ============================================================
+  // Settings panel (collapsible)
+  // ============================================================
+  window.toggleSettings = function() {
+    var panel = document.getElementById('settings-panel');
+    var btn = document.querySelector('.settings-toggle');
+    if (!panel || !btn) return;
+    var willOpen = panel.hasAttribute('hidden');
+    if (willOpen) {
+      panel.removeAttribute('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      panel.setAttribute('hidden', '');
+      btn.setAttribute('aria-expanded', 'false');
+    }
   };
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -1720,11 +2620,57 @@
     saveTimer = setTimeout(saveState, 500);
   });
 
+  // When the user clicks/focuses the collapsed textarea, expand it back so they
+  // can edit. The collapse is just a visual courtesy after calculation, not a lock.
+  document.getElementById('att-input').addEventListener('focus', function() {
+    this.classList.remove('is-collapsed');
+  });
+
   document.getElementById('att-input').addEventListener('keydown', function(e) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
       window.calculate();
+      return;
     }
+    // Double-Enter at end of input → trigger calculate.
+    // Pressing Enter when the field already ends with a newline (i.e. the previous
+    // keystroke was also Enter) is treated as a "submit" gesture, similar to how
+    // a blank line signals end-of-input. Only fires when the cursor is at the end
+    // and there is actual content to calculate.
+    if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
+      const ta = e.target;
+      const cursorAtEnd = ta.selectionStart === ta.value.length
+                       && ta.selectionEnd === ta.value.length;
+      const endsWithNewline = ta.value.endsWith('\n');
+      const hasContent = ta.value.trim().length > 0;
+      if (cursorAtEnd && endsWithNewline && hasContent) {
+        e.preventDefault();
+        window.calculate();
+      }
+    }
+  });
+
+  // Click ripple effect for all <button> elements (excluding theme-opt and modal close)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.classList.contains('theme-opt')) return; // theme switch has its own feedback
+    if (btn.classList.contains('copy-modal-close')) return; // modal close button is too small
+    if (btn.classList.contains('is-calculating')) return; // disabled during calc
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = size + 'px';
+    ripple.style.height = size + 'px';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
   });
 })();
 </script>

@@ -109,6 +109,7 @@
     text-rendering: optimizeLegibility;
     transition: background 0.18s ease, color 0.18s ease;
     position: relative;
+    overflow-x: hidden;
   }
   /* "Horizon" — lower half of viewport gets a soft glow, like a lit floor.
      This sits BEHIND the grid and particles, providing a base ambient layer. */
@@ -167,32 +168,40 @@
     overflow: hidden;
   }
   /* Shooting stars — long thin streaks that occasionally cross the screen.
-     Hidden by default; triggered briefly on calculate button press. */
+     Hidden by default; triggered briefly on calculate button press.
+     Mid-brightness: visible enough to read as a clear streak, but still
+     softer than the original "blinding" version. */
   .space-particles .shooting-star {
     position: absolute;
-    width: 110px;
+    width: 100px;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(200, 230, 255, 0.85) 60%, rgba(255,255,255,0.95) 100%);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(200, 230, 255, 0.55) 60%,
+      rgba(255, 255, 255, 0.72) 100%);
     border-radius: 1px;
-    box-shadow: 0 0 8px rgba(200, 230, 255, 0.7);
+    box-shadow: 0 0 6px rgba(200, 230, 255, 0.45);
     opacity: 0;
     transform-origin: right center;
   }
   .space-particles .shooting-star.is-flying {
-    animation: shootingStar 1.6s ease-out forwards;
+    animation: shootingStar 1.7s ease-out forwards;
   }
   .space-particles .shooting-star:nth-of-type(1) { top: 18%; left: -120px; transform: rotate(18deg); }
   .space-particles .shooting-star:nth-of-type(2) { top: 52%; left: -120px; transform: rotate(12deg); animation-delay: 0.15s; }
   .space-particles .shooting-star:nth-of-type(3) { top: 78%; left: -120px; transform: rotate(22deg); animation-delay: 0.30s; }
   [data-theme="light"] .space-particles .shooting-star {
-    background: linear-gradient(90deg, transparent 0%, rgba(45, 130, 100, 0.55) 60%, rgba(45, 130, 100, 0.85) 100%);
-    box-shadow: 0 0 6px rgba(45, 130, 100, 0.4);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(45, 130, 100, 0.40) 60%,
+      rgba(45, 130, 100, 0.62) 100%);
+    box-shadow: 0 0 5px rgba(45, 130, 100, 0.32);
   }
   @keyframes shootingStar {
-    0%   { opacity: 0; transform: translateX(0)     rotate(var(--star-angle, 18deg)); }
-    8%   { opacity: 1; }
-    70%  { opacity: 1; }
-    100% { opacity: 0; transform: translateX(110vw) rotate(var(--star-angle, 18deg)); }
+    0%   { opacity: 0;    transform: translateX(0)     rotate(var(--star-angle, 18deg)); }
+    10%  { opacity: 0.80; }
+    70%  { opacity: 0.80; }
+    100% { opacity: 0;    transform: translateX(110vw) rotate(var(--star-angle, 18deg)); }
   }
   @media (prefers-reduced-motion: reduce) {
     .space-particles .shooting-star { display: none; }
@@ -209,6 +218,7 @@
      as one unit, with a glowing floor beneath it (Linear-style). */
   .tool-shell {
     position: relative;
+    isolation: isolate;
     background: var(--shell-bg, rgba(20, 24, 32, 0.55));
     border: 1px solid var(--shell-border, rgba(255, 255, 255, 0.08));
     border-radius: 18px;
@@ -304,22 +314,38 @@
     transform-origin: center;
     animation: heroLineDraw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
   }
-  /* Traveling light pulse on top of the accent line */
+  /* Traveling light pulse on top of the accent line — wider band, brighter
+     peak, and faster cycle so the sweep clearly registers as a deliberate
+     decoration rather than a faint blip. */
   .header > .header-pulse {
     position: absolute;
     top: 0;
     left: 0;
     height: 2px;
-    width: 22%;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+    width: 32%;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.40) 25%,
+      rgba(255,255,255,0.95) 50%,
+      rgba(255,255,255,0.40) 75%,
+      transparent 100%);
+    /* Soft halo around the streak so the line briefly "lights up" instead
+       of just flashing a brighter pixel. */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55));
     z-index: 2;
     pointer-events: none;
-    animation: heroLinePulse 6s linear infinite;
+    animation: heroLinePulse 4.5s linear infinite;
     animation-delay: 1.2s;
     opacity: 0;
   }
   [data-theme="light"] .header > .header-pulse {
-    background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(0,0,0,0.10) 25%,
+      rgba(0,0,0,0.28) 50%,
+      rgba(0,0,0,0.10) 75%,
+      transparent 100%);
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.20));
   }
   @keyframes heroLineDraw {
     to { transform: scaleX(1); }
@@ -586,6 +612,63 @@
     opacity: 0.55;
     overflow: hidden;
     resize: none;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     "Edit mode" bar: shown only when #input-section.is-collapsed.
+     A single horizontal pill that takes the place of the entire input
+     panel (section-label + textarea + controls) so the result section
+     becomes visible without scrolling on smaller viewports.
+     ───────────────────────────────────────────────────────────────── */
+  .collapsed-bar {
+    display: none; /* default hidden — only shown when section is collapsed */
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 18px;
+    border: 1px solid var(--input-border, rgba(255,255,255,0.12));
+    border-radius: 10px;
+    background: var(--bg-card, rgba(255,255,255,0.02));
+    color: var(--text-color, inherit);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    transition: background 0.18s, border-color 0.18s, transform 0.15s;
+    text-align: left;
+  }
+  .collapsed-bar:hover {
+    background: var(--input-bg-hover, rgba(255,255,255,0.04));
+    border-color: var(--input-border-hover, rgba(255,255,255,0.20));
+  }
+  .collapsed-bar:active {
+    transform: scale(0.998);
+  }
+  .collapsed-bar-icon {
+    font-size: 14px;
+    opacity: 0.75;
+  }
+  .collapsed-bar-text {
+    flex: 1 1 auto;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .collapsed-bar-arrow {
+    opacity: 0.5;
+    transition: transform 0.2s;
+  }
+  .collapsed-bar:hover .collapsed-bar-arrow {
+    transform: translateY(2px);
+    opacity: 0.8;
+  }
+
+  /* When the input section is collapsed: hide everything EXCEPT the bar. */
+  #input-section.is-collapsed > .section-label,
+  #input-section.is-collapsed > textarea,
+  #input-section.is-collapsed > .controls {
+    display: none;
+  }
+  #input-section.is-collapsed > .collapsed-bar {
+    display: flex;
   }
   textarea.data-input.is-collapsed:hover {
     opacity: 0.85;
@@ -1100,6 +1183,200 @@
     position: relative;
     z-index: 1;
   }
+
+  /* The eq (差引残業) cell is clickable — opens the pace modal.
+     Subtle affordance: brighter border on hover. */
+  .ot-cell.eq[role="button"] {
+    cursor: pointer;
+    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s, background 0.18s;
+  }
+  .ot-cell.eq[role="button"]:hover {
+    border-color: var(--accent-work);
+    transform: translateY(-1px);
+  }
+  .ot-cell.eq[role="button"]:active {
+    transform: translateY(0);
+  }
+  .ot-cell.eq[role="button"]:focus-visible {
+    outline: 2px solid var(--accent-work);
+    outline-offset: 2px;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────
+     Pace modal — themed to match the main tool body (uses CSS vars
+     so it adapts to light/dark mode). No HUD chrome (no corner
+     brackets, no dot grid, no monospace uppercase). Plain card UI.
+     ───────────────────────────────────────────────────────────────── */
+  .pace-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 11, 16, 0);
+    transition: background 0.22s ease;
+    pointer-events: none;
+  }
+  .pace-modal-backdrop:not([hidden]) {
+    display: flex;
+    pointer-events: auto;
+  }
+  .pace-modal-backdrop.is-open {
+    background: rgba(8, 11, 16, 0.55);
+  }
+  [data-theme="light"] .pace-modal-backdrop.is-open {
+    background: rgba(40, 50, 70, 0.35);
+  }
+  .pace-modal {
+    position: relative;
+    width: min(380px, 92vw);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.35),
+      0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+  [data-theme="light"] .pace-modal {
+    box-shadow:
+      0 12px 36px rgba(15, 23, 42, 0.14),
+      0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+  .pace-modal-backdrop.is-open .pace-modal {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .pace-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .pace-modal-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .pace-modal-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .pace-modal-close:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+  }
+  .pace-modal-body {
+    padding: 22px 22px 22px;
+  }
+  .pace-modal-net-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .pace-modal-net-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+  .pace-modal-net-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .pace-modal-net-value.is-pos { color: var(--accent-work); }
+  .pace-modal-net-value.is-neg { color: var(--accent-under); }
+  .pace-modal-net-value.is-zero { color: var(--text-muted); }
+  .pace-modal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .pace-modal-input-label {
+    flex: 1;
+    font-size: 12.5px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .pace-modal-input {
+    width: 76px;
+    padding: 7px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+  .pace-modal-input::-webkit-outer-spin-button,
+  .pace-modal-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .pace-modal-input:focus {
+    outline: none;
+    border-color: var(--accent-work);
+    box-shadow: 0 0 0 3px var(--accent-work-bg);
+  }
+  .pace-modal-input-suffix {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .pace-modal-output {
+    text-align: center;
+    padding: 14px 16px;
+    margin-top: 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    transition: all 0.22s;
+  }
+  .pace-modal-output.is-pos {
+    color: var(--accent-work);
+    border-color: var(--accent-work);
+    background: var(--accent-work-bg);
+  }
+  .pace-modal-output.is-neg {
+    color: var(--accent-under);
+    border-color: var(--accent-under);
+    background: var(--accent-under-bg);
+  }
+  .pace-modal-output.is-zero {
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--bg-card);
+  }
   .ot-cell {
     flex: 1;
     background: var(--bg-card);
@@ -1107,7 +1384,41 @@
     border-radius: 6px;
     padding: 10px 14px;
     text-align: center;
+    position: relative;  /* anchor for ::before perimeter-trace overlay */
     transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.22s ease, box-shadow 0.22s ease, background 0.18s ease;
+  }
+  /* "PIKAT" flash overlay: a quick bright peak then slow fade. The three
+     cells stagger so they flash in sequence left → middle → right.
+     ::before is positioned exactly over the cell border with a wide,
+     blurry box-shadow that creates the soft glow. Opacity is animated
+     for the on/off pulse — sharp ramp up, gradual fade out. */
+  .ot-cell::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 7px;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 0 32px 6px rgba(91, 205, 161, 0.85);
+  }
+  [data-theme="light"] .ot-cell::before {
+    box-shadow: 0 0 26px 5px rgba(20, 130, 95, 0.50);
+  }
+  body.is-orbit-pulsing .ot-cell::before {
+    animation: ot-flash 1.3s ease-out;
+  }
+  /* Stagger: each card flashes 0.6s after the previous, so the eq cell's
+     flash starts ~1.2s after pos's. Total flash sequence ~2.5s. */
+  body.is-orbit-pulsing .ot-cell.pos::before { animation-delay: 0s;   }
+  body.is-orbit-pulsing .ot-cell.neg::before { animation-delay: 0.6s; }
+  body.is-orbit-pulsing .ot-cell.eq::before  { animation-delay: 1.2s; }
+  @keyframes ot-flash {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }   /* sharp peak — the "PIKAT" */
+    100% { opacity: 0; }   /* slow fade */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.is-orbit-pulsing .ot-cell::before { animation: none; }
   }
   .ot-cell:hover {
     transform: translateY(-2px);
@@ -1123,9 +1434,9 @@
   /* The net overtime cell — keeps the same size as siblings (so the row's
      vertical rhythm stays intact), but gets a stronger visual weight via
      gradient bg, glowing border, and subtle text shadow. */
-  /* Net-overtime cell's glow gently breathes — adds a quiet "this is alive"
-     pulse to the main result. Implemented via @property so the box-shadow blur
-     can be animated as a CSS variable. */
+  /* Net-overtime cell's glow breathes more prominently — clear, visible
+     pulse so the user notices the main result is "live". Faster cycle
+     (4s) with bigger blur range (22→72px) makes the pulse easy to read. */
   @property --net-glow-blur {
     syntax: '<length>';
     inherits: true;
@@ -1137,14 +1448,15 @@
       linear-gradient(135deg, var(--accent-over-bg) 0%, transparent 70%),
       var(--accent-over-bg);
     box-shadow:
-      0 0 0 1px var(--accent-over-bg),
+      0 0 0 1px var(--accent-over),
+      0 8px 28px -6px var(--accent-over),
       0 0 var(--net-glow-blur) -8px var(--accent-over),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    animation: netGlowBreathe 6s ease-in-out infinite;
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: netGlowBreathe 4s ease-in-out infinite;
   }
   @keyframes netGlowBreathe {
-    0%, 100% { --net-glow-blur: 18px; }
-    50%      { --net-glow-blur: 36px; }
+    0%, 100% { --net-glow-blur: 22px; }
+    50%      { --net-glow-blur: 72px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .ot-cell.eq { animation: none; }
@@ -1516,6 +1828,773 @@
     margin-left: 8px;
   }
 
+  /* ═══════════════════════════════════════════════════════════════
+     ARCHIVE TERMINAL — bottom-right HUD module that opens the modal.
+     Visually mirrors the surrounding cockpit decorations: thin border,
+     subtle backdrop, monospace uppercase labels, LED indicator.
+     ═══════════════════════════════════════════════════════════════ */
+  .archive-terminal {
+    position: fixed;
+    right: 28px;
+    bottom: 24px;
+    z-index: 90;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 10px 12px;
+    background: rgba(11, 18, 26, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    color: rgba(180, 200, 220, 0.55);
+    cursor: pointer;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color 0.25s, border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    /* Render below the HUD pulse but above the body bg */
+    box-shadow: 0 0 0 0 rgba(91, 205, 161, 0);
+  }
+  .archive-terminal:hover {
+    color: rgba(220, 240, 220, 0.92);
+    border-color: rgba(91, 205, 161, 0.45);
+    background: rgba(11, 22, 18, 0.78);
+    box-shadow: 0 0 18px 1px rgba(91, 205, 161, 0.18);
+  }
+  .archive-terminal.is-open {
+    color: rgba(220, 240, 220, 1);
+    border-color: rgba(91, 205, 161, 0.7);
+    background: rgba(15, 26, 22, 0.92);
+    box-shadow: 0 0 24px 2px rgba(91, 205, 161, 0.28);
+  }
+  .at-led {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #5b3a3a; /* idle: dim red-brown */
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6) inset, 0 0 0 1px rgba(0,0,0,0.4) inset;
+    transition: background 0.4s, box-shadow 0.4s;
+    flex-shrink: 0;
+  }
+  .archive-terminal.has-records .at-led {
+    background: #5bcda1;
+    box-shadow: 0 0 6px rgba(91, 205, 161, 0.85), 0 0 0 1px rgba(0,0,0,0.4) inset;
+    animation: atLedPulse 3.5s ease-in-out infinite;
+  }
+  @keyframes atLedPulse {
+    0%, 100% { opacity: 0.95; }
+    50%      { opacity: 0.55; }
+  }
+  /* Pending-save state: archive launcher glows warmly to signal the user
+     that a past-month save is awaiting year/month confirmation. Distinct
+     from the normal accent-work green to read as "action needed". */
+  .archive-terminal.is-pending-save {
+    color: rgba(245, 220, 175, 0.95);
+    border-color: rgba(232, 183, 100, 0.65);
+    background: rgba(28, 22, 12, 0.78);
+    box-shadow: 0 0 20px 1px rgba(232, 183, 100, 0.32);
+    animation: archivePendingPulse 2.2s ease-in-out infinite;
+  }
+  .archive-terminal.is-pending-save .at-led {
+    background: #e8b764;
+    box-shadow: 0 0 8px rgba(232, 183, 100, 0.95), 0 0 0 1px rgba(0,0,0,0.4) inset;
+    animation: atLedPulse 1.4s ease-in-out infinite;
+  }
+  .archive-terminal.is-pending-save:hover {
+    border-color: rgba(232, 183, 100, 0.85);
+    box-shadow: 0 0 28px 2px rgba(232, 183, 100, 0.45);
+  }
+  @keyframes archivePendingPulse {
+    0%, 100% { box-shadow: 0 0 14px 1px rgba(232, 183, 100, 0.22); }
+    50%      { box-shadow: 0 0 26px 2px rgba(232, 183, 100, 0.48); }
+  }
+  .at-rows {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    line-height: 1.0;
+  }
+  .at-title {
+    font-weight: 500;
+    color: inherit;
+  }
+  .at-divider {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, currentColor 0%, transparent 80%);
+    opacity: 0.4;
+    margin: 1px 0;
+  }
+  .at-status {
+    font-size: 8.5px;
+    opacity: 0.8;
+  }
+  .at-last {
+    font-size: 8px;
+    opacity: 0.55;
+  }
+  .at-last:empty {
+    display: none;
+  }
+  /* HUD-style corner brackets — barely visible by default, glow on hover */
+  .at-corner {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border: 1px solid currentColor;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .at-corner.tl { top: -1px; left: -1px;    border-right: none; border-bottom: none; }
+  .at-corner.tr { top: -1px; right: -1px;   border-left:  none; border-bottom: none; }
+  .at-corner.bl { bottom: -1px; left: -1px; border-right: none; border-top:    none; }
+  .at-corner.br { bottom: -1px; right: -1px;border-left:  none; border-top:    none; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ARCHIVE MODAL — themed to match the main tool body.
+     Uses CSS variables so it adapts to light/dark mode. No HUD chrome
+     (no corner brackets, no scanline, no dot grid pattern, no
+     monospace uppercase). Plain card UI consistent with the pace modal.
+     ═══════════════════════════════════════════════════════════════ */
+  .archive-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 11, 16, 0);
+    transition: background 0.22s ease;
+    pointer-events: none;
+  }
+  .archive-modal-backdrop:not([hidden]) {
+    display: flex;
+    pointer-events: auto;
+  }
+  .archive-modal-backdrop.is-open {
+    background: rgba(8, 11, 16, 0.55);
+  }
+  [data-theme="light"] .archive-modal-backdrop.is-open {
+    background: rgba(40, 50, 70, 0.35);
+  }
+
+  .archive-modal {
+    position: relative;
+    width: min(800px, 92vw);
+    height: min(560px, 88vh);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.97);
+    transition: opacity 0.28s ease-out, transform 0.28s ease-out;
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+  [data-theme="light"] .archive-modal {
+    box-shadow:
+      0 16px 48px rgba(15, 23, 42, 0.16),
+      0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+  .archive-modal-backdrop.is-open .archive-modal {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* HUD decorations hidden — corner brackets & scanline remain in HTML
+     but are visually suppressed so the modal looks like a plain card. */
+  .archive-modal .am-corner,
+  .archive-modal .am-scanline {
+    display: none;
+  }
+
+  /* Header */
+  .am-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .am-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .am-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .am-close:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+  }
+
+  /* Tabs */
+  .am-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 22px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .am-tab {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.22s ease;
+    margin-bottom: -1px;
+  }
+  .am-tab:hover {
+    color: var(--text);
+  }
+  .am-tab.is-active {
+    color: var(--text);
+    font-weight: 500;
+    border-bottom-color: transparent;
+  }
+  /* Active tab indicator: gradient line + soft glow */
+  .am-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--accent-work) 25%,
+      var(--accent-work) 75%,
+      transparent 100%);
+    box-shadow: 0 0 8px var(--accent-work), 0 0 2px var(--accent-work);
+    opacity: 0.85;
+  }
+  [data-theme="light"] .am-tab.is-active::after {
+    box-shadow: 0 0 6px var(--accent-work-bg), 0 0 2px var(--accent-work);
+    opacity: 1;
+  }
+
+  /* Body / panels */
+  .am-body {
+    flex: 1;
+    padding: 20px 22px 22px;
+    overflow-y: auto;
+  }
+  .am-panel {
+    display: none;
+    animation: amPanelFadeIn 0.22s ease-out;
+  }
+  .am-panel.is-active {
+    display: block;
+  }
+  @keyframes amPanelFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* History table */
+  .am-history-table {
+    border-top: 1px solid var(--border-subtle);
+    font-size: 13px;
+  }
+  .am-history-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 1fr 60px 1fr 110px;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 4px;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s;
+  }
+  .am-history-row:hover {
+    background: var(--bg-elevated);
+  }
+  .am-history-row.is-header {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+  }
+  .am-history-row.is-header:hover {
+    background: transparent;
+  }
+  .am-history-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .am-history-cell.month {
+    text-align: left;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .am-history-cell.net-pos { color: var(--accent-work); }
+  .am-history-cell.net-neg { color: var(--accent-under); }
+  .am-history-cell.timestamp {
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+  .am-history-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .am-icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11.5px;
+    transition: all 0.15s;
+  }
+  .am-icon-btn:hover {
+    color: var(--text);
+    border-color: var(--accent-work);
+    background: var(--accent-work-bg);
+  }
+  .am-icon-btn.delete:hover {
+    color: var(--accent-under);
+    border-color: var(--accent-under);
+    background: var(--accent-under-bg);
+  }
+  .am-empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .am-empty-state .standby {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .am-month-edit-input {
+    width: 100px;
+    padding: 4px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--accent-work);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12.5px;
+    text-align: left;
+  }
+  .am-month-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-work-bg);
+  }
+
+  /* Trend tab */
+  .am-trend-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .am-trend-chip {
+    padding: 7px 13px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .am-trend-chip strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .am-trend-chart {
+    height: 200px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 12px;
+    position: relative;
+  }
+  .am-trend-chart svg {
+    width: 100%;
+    height: 100%;
+  }
+  .am-trend-bar {
+    fill: var(--accent-work);
+    fill-opacity: 0.75;
+    transition: fill-opacity 0.18s;
+  }
+  .am-trend-bar.is-neg {
+    fill: var(--accent-under);
+    fill-opacity: 0.8;
+  }
+  .am-trend-bar:hover {
+    fill-opacity: 1;
+  }
+  .am-trend-bar-label {
+    font-family: inherit;
+    font-size: 10px;
+    fill: var(--text-muted);
+    text-anchor: middle;
+  }
+  .am-trend-zero-line {
+    stroke: var(--border-strong);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .am-trend-target-line {
+    stroke: var(--panel-accent);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+  .am-trend-target-label {
+    font-family: inherit;
+    font-size: 10px;
+    fill: var(--panel-accent);
+  }
+  .am-trend-target {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 12px;
+  }
+  .am-target-label {
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .am-target-input {
+    width: 90px;
+    padding: 6px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12.5px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .am-target-input:focus {
+    outline: none;
+    border-color: var(--accent-work);
+    box-shadow: 0 0 0 2px var(--accent-work-bg);
+  }
+  .am-target-save {
+    background: var(--accent-work-bg);
+    border: 1px solid var(--accent-work);
+    color: var(--accent-work);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .am-target-save:hover {
+    background: var(--accent-work);
+    color: #FFFFFF;
+  }
+  [data-theme="dark"] .am-target-save:hover {
+    color: #0F1115;
+  }
+  .am-target-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  /* Data tab */
+  .am-section {
+    margin-bottom: 22px;
+  }
+  .am-section-title {
+    font-size: 12.5px;
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .am-section-title.danger {
+    color: var(--accent-under);
+    border-bottom-color: var(--accent-under-bg);
+  }
+  .am-btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .am-action-btn {
+    flex: 1;
+    min-width: 160px;
+    padding: 11px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .am-action-btn:hover {
+    border-color: var(--accent-work);
+    background: var(--accent-work-bg);
+    color: var(--accent-work);
+  }
+  .am-drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 26px 20px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    transition: all 0.2s;
+  }
+  .am-drop-zone:hover, .am-drop-zone.is-dragover {
+    background: var(--accent-work-bg);
+    border-color: var(--accent-work);
+    color: var(--text);
+  }
+  .am-drop-text {
+    font-size: 12.5px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .am-drop-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .am-danger-btn {
+    padding: 10px 18px;
+    background: transparent;
+    border: 1px solid var(--accent-under);
+    color: var(--accent-under);
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .am-danger-btn:hover {
+    background: var(--accent-under);
+    color: #FFFFFF;
+  }
+  [data-theme="dark"] .am-danger-btn:hover {
+    color: #0F1115;
+  }
+
+  /* Confirm overlay (inside modal) */
+  .am-confirm {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    background: rgba(8, 11, 16, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    animation: amPanelFadeIn 0.18s ease-out;
+  }
+  [data-theme="light"] .am-confirm {
+    background: rgba(40, 50, 70, 0.35);
+  }
+  .am-confirm:not([hidden]) {
+    display: flex;
+  }
+  .am-confirm-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  }
+  [data-theme="light"] .am-confirm-panel {
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.16);
+  }
+  .am-confirm-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .am-confirm-body {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .am-confirm-body .stat-line {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin: 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .am-confirm-body .warn-line {
+    color: var(--accent-under);
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  /* Year/month picker inside confirm dialog */
+  .am-confirm-body .ym-confirm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 10px;
+  }
+  .am-confirm-body .ym-input {
+    width: 80px;
+    padding: 7px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+  .am-confirm-body .ym-input::-webkit-outer-spin-button,
+  .am-confirm-body .ym-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .am-confirm-body .ym-input.ym-input-narrow {
+    width: 60px;
+  }
+  .am-confirm-body .ym-input:focus {
+    outline: none;
+    border-color: var(--accent-work);
+    box-shadow: 0 0 0 2px var(--accent-work-bg);
+  }
+  .am-confirm-body .ym-suffix {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .am-confirm-body .ym-confirm-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .am-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .am-confirm-cancel, .am-confirm-ok {
+    padding: 8px 18px;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .am-confirm-cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .am-confirm-cancel:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+    background: var(--bg-elevated);
+  }
+  .am-confirm-ok {
+    background: var(--accent-work);
+    border: 1px solid var(--accent-work);
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+  [data-theme="dark"] .am-confirm-ok {
+    color: #0F1115;
+  }
+  .am-confirm-ok:hover {
+    filter: brightness(1.08);
+  }
+  .am-confirm-ok.is-danger {
+    background: var(--accent-under);
+    border-color: var(--accent-under);
+    color: #FFFFFF;
+  }
+  [data-theme="dark"] .am-confirm-ok.is-danger {
+    color: #0F1115;
+  }
+  .am-confirm-ok.is-danger:hover {
+    filter: brightness(1.08);
+  }
+
+  /* Archive terminal icon (outside the modal) — keeps the HUD aesthetic
+     so it blends with the right-bottom corner decoration. Light theme
+     gets adjusted colors to stay legible against a pale background. */
+  [data-theme="light"] .archive-terminal {
+    background: rgba(245, 247, 250, 0.85);
+    border-color: rgba(15, 23, 42, 0.15);
+    color: rgba(15, 50, 30, 0.6);
+  }
+  [data-theme="light"] .archive-terminal:hover {
+    color: rgba(15, 80, 50, 0.95);
+    border-color: rgba(91, 205, 161, 0.6);
+    background: rgba(240, 255, 248, 0.95);
+  }
+
+  @media (max-width: 600px) {
+    .archive-terminal {
+      right: 14px;
+      bottom: 14px;
+      padding: 8px 10px;
+      font-size: 8.5px;
+    }
+    .at-rows { gap: 1px; }
+    .am-history-row {
+      grid-template-columns: 70px 1fr 1fr 50px;
+      gap: 6px;
+    }
+    .am-history-row .am-history-cell.timestamp,
+    .am-history-row .am-history-actions {
+      grid-column: span 4;
+      justify-content: flex-end;
+      padding-top: 4px;
+    }
+  }
+
+
   @media (max-width: 600px) {
     .container { padding: 24px 16px 60px; }
     .header {
@@ -1634,6 +2713,25 @@
     color: var(--text);
     border-color: var(--border-strong);
     background: var(--row-divider);
+  }
+  .copy-modal-notice {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--accent-work);
+    border-radius: 6px;
+    background: var(--accent-work-bg);
+    color: var(--text);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .copy-modal-notice strong {
+    color: var(--accent-work);
+    font-weight: 600;
+  }
+  .copy-modal-notice-mark {
+    color: var(--accent-work);
+    font-weight: 600;
+    margin-right: 2px;
   }
   .copy-modal-img {
     max-width: 100%;
@@ -1891,6 +2989,357 @@
     padding-left: 0;
   }
 
+  /* L. Decorative HUD/orbital SVGs around tool-shell (DARK theme only).
+     Positioned with negative offsets to sit OUTSIDE the tool-shell frame.
+     Globe and radar mostly sit on the cosmic body bg, partially crossing
+     the tool-shell edge for visual cohesion. Brackets sit just outside
+     the 4 corners. */
+  .shell-bg-deco {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+    color: rgba(160, 220, 255, 1);
+    opacity: 0.30;
+  }
+  .deco-globe {
+    top: -120px;
+    right: -160px;
+    width: 280px;
+    height: 280px;
+  }
+  .deco-radar {
+    bottom: -100px;
+    left: -130px;
+    width: 220px;
+    height: 220px;
+  }
+  .deco-corner {
+    width: 18px;
+    height: 18px;
+  }
+  .deco-corner-tl { top: -10px;    left: -10px;  }
+  .deco-corner-tr { top: -10px;    right: -10px; }
+  .deco-corner-bl { bottom: -10px; left: -10px;  }
+  .deco-corner-br { bottom: -10px; right: -10px; }
+
+  /* Vertical scale (left side, vertically centered) */
+  .deco-vscale {
+    top: 50%;
+    left: -110px;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 300px;
+  }
+
+  /* Status bar (top, full width above tool-shell) */
+  .deco-statusbar {
+    top: -45px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 30px;
+  }
+
+  /* Right control panel (right side, vertically centered) */
+  .deco-rightpanel {
+    top: 50%;
+    right: -240px;
+    transform: translateY(-50%);
+    width: 220px;
+    height: 220px;
+  }
+
+  /* Bottom info bar (below tool-shell) */
+  .deco-bottombar {
+    bottom: -36px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 24px;
+  }
+
+  /* Top-left logo brand mark (above status bar) */
+  .deco-logo {
+    top: -85px;
+    left: 0;
+    width: 240px;
+    height: 35px;
+  }
+
+  /* HOME LOCATION sub-radar (bottom-right outside) */
+  .deco-homelocation {
+    bottom: -100px;
+    right: -180px;
+    width: 200px;
+    height: 220px;
+  }
+
+  /* Top-center arc gauge (34%) */
+  .deco-arcgauge {
+    top: -85px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 50px;
+  }
+
+  /* HUD pulse on calculate: bright flash + glow, staggered across elements.
+     Smoother curve (single peak, slow fade) for a calmer feel. */
+  body.is-hud-pulsing .shell-bg-deco {
+    animation: hud-flash 1.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  @keyframes hud-flash {
+    0%   {
+      filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+    25%  {
+      filter: brightness(2.2) drop-shadow(0 0 12px rgba(160, 220, 255, 0.7));
+    }
+    100% {
+      filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+  }
+  /* Stagger by element type (wave from globe outward) */
+  body.is-hud-pulsing .deco-globe        { animation-delay: 0s;     }
+  body.is-hud-pulsing .deco-corner       { animation-delay: 0.04s;  }
+  body.is-hud-pulsing .deco-radar        { animation-delay: 0.06s;  }
+  body.is-hud-pulsing .deco-homelocation { animation-delay: 0.08s;  }
+  body.is-hud-pulsing .deco-vscale       { animation-delay: 0.1s;   }
+  body.is-hud-pulsing .deco-rightpanel   { animation-delay: 0.12s;  }
+  body.is-hud-pulsing .deco-statusbar    { animation-delay: 0.16s;  }
+  body.is-hud-pulsing .deco-arcgauge     { animation-delay: 0.16s;  }
+  body.is-hud-pulsing .deco-logo         { animation-delay: 0.2s;   }
+  body.is-hud-pulsing .deco-bottombar    { animation-delay: 0.22s;  }
+
+  /* ===== Decoration sub-element animations (CSS-controlled, replaces SMIL) ===== */
+
+  /* Globe sweep line: rotates around viewBox origin (which is the SVG center) */
+  .deco-globe .globe-sweep-line {
+    transform-origin: 0 0;
+    transform-box: view-box;
+    animation: deco-globe-sweep 6s linear infinite;
+    /* Smooth fade for stroke-width / opacity so the sweep doesn't snap
+       back to its dim default the moment the calc pulse ends. */
+    transition: stroke-width 0.9s ease-out, opacity 0.9s ease-out;
+  }
+  @keyframes deco-globe-sweep {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Radar pulse ring: expands outward and fades */
+  .deco-radar .radar-pulse-ring {
+    fill: none;
+    stroke: currentColor;
+    animation: deco-radar-pulse 3.5s linear infinite;
+  }
+  @keyframes deco-radar-pulse {
+    from { r: 50;  opacity: 0.7; }
+    to   { r: 135; opacity: 0;   }
+  }
+
+  /* Generic blink (LEDs on status bar, logo, radar target dot) */
+  .shell-bg-deco .hud-led {
+    animation: deco-blink 2s ease-in-out infinite;
+    opacity: 0.85;
+  }
+  @keyframes deco-blink {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1;   }
+  }
+
+  /* Arc gauges: drawn fully by default. Each path uses its own actual length
+     for stroke-dasharray (don't depend on pathLength attribute, which has
+     uneven browser behavior). Animations are split per-path because each
+     starts from a different dashoffset value. */
+  .deco-arcgauge .arc-fill {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 0;
+  }
+  .deco-homelocation .homeloc-arc {
+    stroke-dasharray: 560;
+    stroke-dashoffset: 0;
+  }
+
+  /* Right control panel bar fills: ready to be scaled horizontally during pulse */
+  .deco-rightpanel .bar-fill {
+    transform-origin: left center;
+    transform-box: fill-box;
+  }
+
+  /* ===== HUD pulse (calculate button): drives meters and gauges ===== */
+
+  /* VScale arrow: smooth symmetric calibration sweep — up to top, back
+     through rest, down past center, then back to rest. No overshoots, no
+     bounces — just a clean ease-in-out wave. */
+  body.is-hud-pulsing .vscale-arrow-group {
+    animation: deco-vscale-scan 2.5s cubic-bezier(0.4, 0, 0.4, 1);
+  }
+  @keyframes deco-vscale-scan {
+    0%   { transform: translateY(0);     }   /* rest at -0.78 */
+    25%  { transform: translateY(-89px); }   /* sweep up to top (-2) */
+    50%  { transform: translateY(0);     }   /* through rest */
+    75%  { transform: translateY(89px);  }   /* sweep down past center */
+    100% { transform: translateY(0);     }   /* settle at -0.78 */
+  }
+  /* Cooldown: a tiny gentle dip so the arrow doesn't stop dead at 2.7s. */
+  body.is-hud-cooldown:not(.is-hud-pulsing) .vscale-arrow-group {
+    animation: deco-vscale-cooldown 1.4s cubic-bezier(0.4, 0, 0.4, 1);
+  }
+  @keyframes deco-vscale-cooldown {
+    0%   { transform: translateY(0);    }
+    50%  { transform: translateY(15px); }   /* small dip below center */
+    100% { transform: translateY(0);    }
+  }
+
+  /* Arc gauge (34%) redraws from start. Path length ~37, dasharray 40. */
+  body.is-hud-pulsing .deco-arcgauge .arc-fill {
+    animation: deco-arc-fill-redraw 2s linear;
+  }
+  @keyframes deco-arc-fill-redraw {
+    0%   {
+      stroke-dashoffset: 40;
+      stroke-width: 6;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    85%  {
+      stroke-dashoffset: 0;
+      stroke-width: 6;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    100% {
+      stroke-dashoffset: 0;
+      stroke-width: 2.5;
+      filter: none;
+    }
+  }
+
+  /* HOME LOCATION 98% arc redraws from start. Path length ~542, dasharray 560. */
+  body.is-hud-pulsing .deco-homelocation .homeloc-arc {
+    animation: deco-homeloc-arc-redraw 2s linear;
+  }
+  @keyframes deco-homeloc-arc-redraw {
+    0%   {
+      stroke-dashoffset: 560;
+      stroke-width: 5;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    85%  {
+      stroke-dashoffset: 0;
+      stroke-width: 5;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    100% {
+      stroke-dashoffset: 0;
+      stroke-width: 2;
+      filter: none;
+    }
+  }
+
+  /* Globe sweep line: subtle by default, but during the calc pulse it
+     speeds up AND becomes brighter/thicker so the rotation is easy to read. */
+  body.is-hud-pulsing .deco-globe .globe-sweep-line {
+    animation: deco-globe-sweep 2.5s linear infinite;
+    stroke-width: 1.8;
+    opacity: 0.9;
+    /* Faster fade-IN than the default fade-OUT (0.9s on the base rule) */
+    transition: stroke-width 0.3s ease-out, opacity 0.3s ease-out;
+  }
+  /* Cooldown: intermediate speed and brightness so the sweep doesn't snap
+     from "fast/bright" back to "slow/dim" the instant the pulse ends. */
+  body.is-hud-cooldown:not(.is-hud-pulsing) .deco-globe .globe-sweep-line {
+    animation: deco-globe-sweep 4s linear infinite;
+    stroke-width: 1.25;
+    opacity: 0.72;
+  }
+
+  /* Radar pulse speeds up during pulse */
+  body.is-hud-pulsing .deco-radar .radar-pulse-ring {
+    animation: deco-radar-pulse 1s linear infinite;
+  }
+
+  /* All LEDs rapid-blink */
+  body.is-hud-pulsing .shell-bg-deco .hud-led {
+    animation: deco-blink 0.4s ease-in-out infinite;
+  }
+
+  /* Right control panel bars: smooth fill from 0 to target value (no oscillation).
+     Each bar's filled rects scale from scaleX(0) to scaleX(1), looking like
+     a meter loading smoothly to its level. */
+  body.is-hud-pulsing .deco-rightpanel .bar-fill {
+    animation: deco-bar-meter 2s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  @keyframes deco-bar-meter {
+    0%   { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  /* ATMO grid pentagon nodes: light up sequentially */
+  body.is-hud-pulsing .atmo-nodes circle {
+    animation: deco-atmo-flash 0.6s ease-in-out;
+  }
+  body.is-hud-pulsing .atmo-nodes circle:nth-child(1) { animation-delay: 0.10s; }
+  body.is-hud-pulsing .atmo-nodes circle:nth-child(2) { animation-delay: 0.30s; }
+  body.is-hud-pulsing .atmo-nodes circle:nth-child(3) { animation-delay: 0.50s; }
+  body.is-hud-pulsing .atmo-nodes circle:nth-child(4) { animation-delay: 0.70s; }
+  body.is-hud-pulsing .atmo-nodes circle:nth-child(5) { animation-delay: 0.90s; }
+  @keyframes deco-atmo-flash {
+    0%, 100% {
+      r: 3;
+      filter: brightness(1);
+    }
+    50% {
+      r: 7;
+      filter: brightness(2.8) drop-shadow(0 0 6px currentColor);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.is-hud-pulsing .shell-bg-deco,
+    body.is-hud-pulsing .vscale-arrow-group,
+    body.is-hud-pulsing .deco-arcgauge .arc-fill,
+    body.is-hud-pulsing .deco-homelocation .homeloc-arc,
+    body.is-hud-pulsing .deco-globe .globe-sweep-line,
+    body.is-hud-pulsing .deco-radar .radar-pulse-ring,
+    body.is-hud-pulsing .shell-bg-deco .hud-led,
+    body.is-hud-pulsing .deco-rightpanel .bar-fill,
+    body.is-hud-pulsing .atmo-nodes circle {
+      animation: none;
+    }
+  }
+
+  /* On very narrow screens (mobile/small tablet), hide the outside HUD
+     decorations because they would overlap the tool itself. The 4 corner
+     brackets remain since they sit at the tool-shell edges. */
+  @media (max-width: 900px) {
+    .shell-bg-deco:not(.deco-corner) {
+      display: none;
+    }
+  }
+
+  /* Auto-shrink the entire tool layout (container + tool-shell + decorations)
+     on screens that don't have enough room. Applied to .container (the parent
+     wrapper) so the surrounding padding/margin also shrinks proportionally,
+     not just the inner tool. */
+  @media (max-width: 1500px) and (min-width: 1300px) {
+    .container {
+      zoom: 0.85;
+    }
+  }
+  @media (max-width: 1300px) and (min-width: 1100px) {
+    .container {
+      zoom: 0.74;
+    }
+  }
+  @media (max-width: 1100px) and (min-width: 901px) {
+    .container {
+      zoom: 0.62;
+    }
+  }
+
+  [data-theme="light"] .shell-bg-deco {
+    display: none;
+  }
+
   /* K. Tool-shell — solid pure white, no gradients, no floor bleed.
      Forces fully opaque #FFFFFF (default --shell-bg is 0.75 alpha which
      lets the body bottom gradient bleed through), and hides the
@@ -1906,10 +3355,62 @@
     display: none;
   }
 
+  /* ─────────────────────────────────────────────────────────────────
+     Sparkline mini-chart inside each stat-card.
+     Shows daily workMinutes as bars; days >= 8h get a brighter fill.
+     Dashed reference line at 8h (480 min).
+     ───────────────────────────────────────────────────────────────── */
+  .sparkline-wrap {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.10);
+  }
+  [data-theme="light"] .sparkline-wrap {
+    border-top-color: rgba(0, 0, 0, 0.10);
+  }
+  .sparkline-wrap svg {
+    display: block;
+    width: 100%;
+    overflow: visible;
+  }
+  /* Each bar starts collapsed at the bottom and grows up. The per-bar
+     animation-delay is set inline (left-to-right stagger) by buildSparkline. */
+  .sparkline-wrap rect {
+    transform: scaleY(0);
+    transform-origin: 50% 100%;
+    transform-box: fill-box;
+    animation: sparkline-bar-grow 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes sparkline-bar-grow {
+    to { transform: scaleY(1); }
+  }
+  /* Reference line fades in after most of the bars have grown */
+  .sparkline-wrap line {
+    opacity: 0;
+    animation: sparkline-line-fade 0.45s ease-out 0.6s forwards;
+  }
+  @keyframes sparkline-line-fade {
+    to { opacity: 0.30; }
+  }
+  .sparkline-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 9px;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    letter-spacing: 0.6px;
+    color: var(--text-dim, #8a92a0);
+    opacity: 0.75;
+    text-transform: uppercase;
+  }
+  .sparkline-meta .sparkline-label { opacity: 0.55; margin-right: 3px; }
+
 </style>
 </head>
 <body>
 
+<!-- Shooting stars host. Stars fire briefly when the calculate button is
+     pressed; subtle (low-opacity) so they accent without dominating. -->
 <div class="space-particles" aria-hidden="true">
   <div class="shooting-star"></div>
   <div class="shooting-star"></div>
@@ -1919,6 +3420,351 @@
 <div class="container">
 
   <div class="tool-shell">
+
+  <!-- Decorative HUD/orbital backgrounds (dark theme only).
+       Each decoration is its own SVG, positioned via CSS, so they stay
+       at the correct location regardless of tool-shell aspect ratio. -->
+  <svg class="shell-bg-deco deco-globe" viewBox="-200 -200 400 400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="currentColor" fill="none">
+      <!-- Outer ring -->
+      <circle r="180" stroke-width="1" opacity="0.7"/>
+      <!-- 12 tick marks at 30° intervals -->
+      <g opacity="0.55">
+        <line x1="0" y1="-180" x2="0" y2="-170"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(30)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(60)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(90)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(120)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(150)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(180)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(210)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(240)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(270)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(300)"/>
+        <line x1="0" y1="-180" x2="0" y2="-170" transform="rotate(330)"/>
+      </g>
+      <!-- Mid ring -->
+      <circle r="140" stroke-width="0.7" opacity="0.5"/>
+      <!-- Latitude/longitude grid (globe pattern) -->
+      <ellipse rx="140" ry="35" stroke-width="0.5" opacity="0.45"/>
+      <ellipse rx="140" ry="80" stroke-width="0.5" opacity="0.45"/>
+      <ellipse rx="35" ry="140" stroke-width="0.5" opacity="0.45"/>
+      <ellipse rx="80" ry="140" stroke-width="0.5" opacity="0.45"/>
+      <!-- Inner ring -->
+      <circle r="60" stroke-width="0.5" opacity="0.4"/>
+      <!-- Crosshair (full diameter) -->
+      <line x1="-180" y1="0" x2="180" y2="0" stroke-width="0.4" stroke-dasharray="3 3" opacity="0.35"/>
+      <line x1="0" y1="-180" x2="0" y2="180" stroke-width="0.4" stroke-dasharray="3 3" opacity="0.35"/>
+      <!-- Center crosshair indicator -->
+      <line x1="-12" y1="0" x2="-6" y2="0" stroke-width="1" opacity="0.75"/>
+      <line x1="6" y1="0" x2="12" y2="0" stroke-width="1" opacity="0.75"/>
+      <line x1="0" y1="-12" x2="0" y2="-6" stroke-width="1" opacity="0.75"/>
+      <line x1="0" y1="6" x2="0" y2="12" stroke-width="1" opacity="0.75"/>
+      <!-- Outer orbit ellipse -->
+      <ellipse rx="195" ry="175" stroke-width="0.5" opacity="0.5" transform="rotate(-15)"/>
+    </g>
+    <!-- Center dot (filled) -->
+    <circle r="2.5" fill="currentColor" opacity="0.85"/>
+    <!-- Target markers on mid ring (triangles pointing inward) -->
+    <g fill="currentColor" opacity="0.8">
+      <polygon points="-3,-138 3,-138 0,-128" transform="rotate(-30)"/>
+      <polygon points="-3,-138 3,-138 0,-128" transform="rotate(75)"/>
+      <polygon points="-3,-138 3,-138 0,-128" transform="rotate(180)"/>
+    </g>
+    <!-- Satellite dot on outer orbit -->
+    <circle cx="188" cy="-50" r="3.5" fill="currentColor" opacity="0.8"/>
+    <!-- Scanning sweep line (rotates 360° every 6s, controlled via CSS).
+         Subtle by default; gets brighter/thicker only during calc pulse. -->
+    <line class="globe-sweep-line" x1="0" y1="0" x2="0" y2="-180" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+    <!-- Side coord readouts on horizontal axis -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.75" letter-spacing="1">
+      <text x="-145" y="3">00487</text>
+      <text x="105" y="3">00523</text>
+    </g>
+    <!-- TARGET ON label (top-left of globe) -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" letter-spacing="2">
+      <text x="-160" y="-150" fill="currentColor" opacity="0.7">TARGET</text>
+      <text x="-105" y="-150" fill="rgb(120, 240, 180)" opacity="0.9">ON</text>
+    </g>
+    <!-- Status text -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.7">
+      <text x="-185" y="195" letter-spacing="2">TGT 98%</text>
+      <text x="115" y="195" letter-spacing="2">ACTIVE</text>
+    </g>
+  </svg>
+
+  <svg class="shell-bg-deco deco-radar" viewBox="-150 -150 300 300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="currentColor" fill="none">
+      <!-- Static rings -->
+      <circle r="50" stroke-width="0.6" opacity="0.65"/>
+      <circle r="85" stroke-width="0.6" opacity="0.55"/>
+      <circle r="120" stroke-width="0.6" opacity="0.4"/>
+      <!-- Tick marks at 8 angles -->
+      <g opacity="0.5">
+        <line x1="0" y1="-120" x2="0" y2="-114"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(45)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(90)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(135)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(180)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(225)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(270)"/>
+        <line x1="0" y1="-120" x2="0" y2="-114" transform="rotate(315)"/>
+      </g>
+      <!-- Crosshair -->
+      <line x1="-130" y1="0" x2="130" y2="0" stroke-width="0.4" opacity="0.45"/>
+      <line x1="0" y1="-130" x2="0" y2="130" stroke-width="0.4" opacity="0.45"/>
+      <!-- Pulsing outer ring (animated via CSS) -->
+      <circle class="radar-pulse-ring" stroke-width="0.8"/>
+    </g>
+    <!-- Center dot -->
+    <circle r="2" fill="currentColor" opacity="0.8"/>
+    <!-- Blinking target dot (animated via CSS) -->
+    <circle class="hud-led" cx="42" cy="-32" r="3" fill="currentColor"/>
+    <!-- Label -->
+    <text x="-105" y="142" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.7" letter-spacing="2">RADAR ON</text>
+  </svg>
+
+  <!-- Vertical scale (left side, outside tool-shell) -->
+  <svg class="shell-bg-deco deco-vscale" viewBox="0 0 80 300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="currentColor" fill="none">
+      <!-- Vertical line -->
+      <line x1="40" y1="0" x2="40" y2="300" stroke-width="0.5" opacity="0.5"/>
+      <!-- 5 notches (-2 +2) -->
+      <g opacity="0.55">
+        <line x1="33" y1="2"   x2="47" y2="2"/>
+        <line x1="36" y1="77"  x2="44" y2="77"/>
+        <line x1="33" y1="150" x2="47" y2="150"/>
+        <line x1="36" y1="225" x2="44" y2="225"/>
+        <line x1="33" y1="298" x2="47" y2="298"/>
+      </g>
+      <!-- Half-step minor ticks -->
+      <g opacity="0.3">
+        <line x1="38" y1="40"  x2="42" y2="40"/>
+        <line x1="38" y1="115" x2="42" y2="115"/>
+        <line x1="38" y1="187" x2="42" y2="187"/>
+        <line x1="38" y1="262" x2="42" y2="262"/>
+      </g>
+    </g>
+    <!-- Numbers -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.65" text-anchor="end">
+      <text x="29" y="6">-2</text>
+      <text x="29" y="81">-1</text>
+      <text x="29" y="154">0</text>
+      <text x="29" y="229">+1</text>
+      <text x="29" y="302">+2</text>
+    </g>
+    <!-- Current value indicator at -0.78 (between -1 at y=77 and 0 at y=150 → y ≈ 91) -->
+    <g class="vscale-arrow-group">
+      <polygon points="50,91 60,86 60,96" fill="currentColor" opacity="0.85"/>
+      <text x="65" y="95" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.9" letter-spacing="1">-0.78</text>
+    </g>
+  </svg>
+
+  <!-- Status bar (top, above tool-shell) -->
+  <svg class="shell-bg-deco deco-statusbar" viewBox="0 0 600 30" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <!-- Status indicator dot (CSS-animated) -->
+    <circle class="hud-led" cx="10" cy="15" r="4" fill="currentColor"/>
+    <!-- Status text -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor">
+      <text x="22" y="19" opacity="0.75" letter-spacing="2">OPERATION STATUS: ACTIVE</text>
+      <text x="450" y="19" opacity="0.75" letter-spacing="2">SYSTEM: ONLINE</text>
+    </g>
+    <!-- Side accent lines -->
+    <g stroke="currentColor" stroke-width="0.5" opacity="0.5">
+      <line x1="220" y1="15" x2="245" y2="15"/>
+      <line x1="425" y1="15" x2="445" y2="15"/>
+    </g>
+  </svg>
+
+  <svg class="shell-bg-deco deco-corner deco-corner-tl" viewBox="0 0 16 16" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 0 16 L 0 0 L 16 0" stroke="currentColor" fill="none" stroke-width="1.4"/>
+  </svg>
+  <svg class="shell-bg-deco deco-corner deco-corner-tr" viewBox="0 0 16 16" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 0 0 L 16 0 L 16 16" stroke="currentColor" fill="none" stroke-width="1.4"/>
+  </svg>
+  <svg class="shell-bg-deco deco-corner deco-corner-bl" viewBox="0 0 16 16" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 0 0 L 0 16 L 16 16" stroke="currentColor" fill="none" stroke-width="1.4"/>
+  </svg>
+  <svg class="shell-bg-deco deco-corner deco-corner-br" viewBox="0 0 16 16" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 16 0 L 16 16 L 0 16" stroke="currentColor" fill="none" stroke-width="1.4"/>
+  </svg>
+
+  <!-- Right panel: CONTROL PANEL with bars + ATMO grid plot -->
+  <svg class="shell-bg-deco deco-rightpanel" viewBox="0 0 220 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <!-- Frame corner brackets -->
+    <g stroke="currentColor" fill="none" opacity="0.55">
+      <path d="M 0 14 L 0 0 L 14 0"/>
+      <path d="M 220 14 L 220 0 L 206 0"/>
+      <path d="M 0 206 L 0 220 L 14 220"/>
+      <path d="M 220 206 L 220 220 L 206 220"/>
+    </g>
+    <!-- Header -->
+    <text x="110" y="14" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.8" letter-spacing="2" text-anchor="middle">CONTROL PANEL</text>
+    <line x1="20" y1="22" x2="200" y2="22" stroke="currentColor" opacity="0.3"/>
+    <!-- GRAVITY -->
+    <text x="10" y="40" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.7" letter-spacing="1">GRAVITY</text>
+    <text class="gravity-value" x="210" y="40" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.85" text-anchor="end">7.605</text>
+    <!-- TARGET MODE: H2 -->
+    <text x="10" y="60" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.7" letter-spacing="1">TARGET MODE: H2</text>
+    <!-- Bar 1: high (657) -->
+    <g class="bar-fill" fill="currentColor" opacity="0.55">
+      <rect x="10" y="68" width="9" height="5"/><rect x="22" y="68" width="9" height="5"/>
+      <rect x="34" y="68" width="9" height="5"/><rect x="46" y="68" width="9" height="5"/>
+      <rect x="58" y="68" width="9" height="5"/><rect x="70" y="68" width="9" height="5"/>
+      <rect x="82" y="68" width="9" height="5"/><rect x="94" y="68" width="9" height="5"/>
+      <rect x="106" y="68" width="9" height="5"/><rect x="118" y="68" width="9" height="5"/>
+      <rect x="130" y="68" width="9" height="5"/><rect x="142" y="68" width="9" height="5"/>
+      <rect x="154" y="68" width="9" height="5"/><rect x="166" y="68" width="9" height="5"/>
+    </g>
+    <text class="bar-value bar1-value" x="210" y="73" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.85" text-anchor="end">657</text>
+    <!-- Bar 2: mid (240) -->
+    <g class="bar-fill" fill="currentColor" opacity="0.55">
+      <rect x="10" y="80" width="9" height="5"/><rect x="22" y="80" width="9" height="5"/>
+      <rect x="34" y="80" width="9" height="5"/><rect x="46" y="80" width="9" height="5"/>
+      <rect x="58" y="80" width="9" height="5"/><rect x="70" y="80" width="9" height="5"/>
+      <rect x="82" y="80" width="9" height="5"/>
+    </g>
+    <g stroke="currentColor" fill="none" opacity="0.3">
+      <rect x="94" y="80" width="9" height="5"/><rect x="106" y="80" width="9" height="5"/>
+      <rect x="118" y="80" width="9" height="5"/><rect x="130" y="80" width="9" height="5"/>
+      <rect x="142" y="80" width="9" height="5"/><rect x="154" y="80" width="9" height="5"/>
+      <rect x="166" y="80" width="9" height="5"/>
+    </g>
+    <text class="bar-value bar2-value" x="210" y="85" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.85" text-anchor="end">240</text>
+    <!-- Bar 3: warning red (140) -->
+    <g class="bar-fill" fill="rgb(255, 110, 110)" opacity="0.7">
+      <rect x="10" y="92" width="9" height="5"/><rect x="22" y="92" width="9" height="5"/>
+      <rect x="34" y="92" width="9" height="5"/><rect x="46" y="92" width="9" height="5"/>
+    </g>
+    <g stroke="currentColor" fill="none" opacity="0.3">
+      <rect x="58" y="92" width="9" height="5"/><rect x="70" y="92" width="9" height="5"/>
+      <rect x="82" y="92" width="9" height="5"/><rect x="94" y="92" width="9" height="5"/>
+      <rect x="106" y="92" width="9" height="5"/><rect x="118" y="92" width="9" height="5"/>
+      <rect x="130" y="92" width="9" height="5"/><rect x="142" y="92" width="9" height="5"/>
+      <rect x="154" y="92" width="9" height="5"/><rect x="166" y="92" width="9" height="5"/>
+    </g>
+    <text class="bar-value bar3-value" x="210" y="97" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="rgb(255, 110, 110)" opacity="0.9" text-anchor="end">140</text>
+    <!-- Footer -->
+    <text x="10" y="124" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="9" fill="currentColor" opacity="0.7" letter-spacing="1">DEFAULT TARGETING IS ON</text>
+    <text class="targeting-value" x="210" y="124" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.85" text-anchor="end">65%</text>
+    <line x1="20" y1="134" x2="200" y2="134" stroke="currentColor" opacity="0.25"/>
+    <!-- Sub-section header: ATMO -->
+    <text x="110" y="150" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.7" letter-spacing="2" text-anchor="middle">ATMO</text>
+    <!-- Grid of 7x3 dots -->
+    <g fill="currentColor" opacity="0.4">
+      <circle cx="20" cy="165" r="1.5"/><circle cx="50" cy="165" r="1.5"/>
+      <circle cx="80" cy="165" r="1.5"/><circle cx="110" cy="165" r="1.5"/>
+      <circle cx="140" cy="165" r="1.5"/><circle cx="170" cy="165" r="1.5"/>
+      <circle cx="200" cy="165" r="1.5"/>
+      <circle cx="20" cy="183" r="1.5"/><circle cx="50" cy="183" r="1.5"/>
+      <circle cx="80" cy="183" r="1.5"/><circle cx="110" cy="183" r="1.5"/>
+      <circle cx="140" cy="183" r="1.5"/><circle cx="170" cy="183" r="1.5"/>
+      <circle cx="200" cy="183" r="1.5"/>
+      <circle cx="20" cy="201" r="1.5"/><circle cx="50" cy="201" r="1.5"/>
+      <circle cx="80" cy="201" r="1.5"/><circle cx="110" cy="201" r="1.5"/>
+      <circle cx="140" cy="201" r="1.5"/><circle cx="170" cy="201" r="1.5"/>
+      <circle cx="200" cy="201" r="1.5"/>
+    </g>
+    <!-- Connection lines between active nodes -->
+    <g stroke="currentColor" fill="none" opacity="0.5">
+      <line x1="50" y1="183" x2="110" y2="165"/>
+      <line x1="110" y1="165" x2="170" y2="183"/>
+      <line x1="170" y1="183" x2="140" y2="201"/>
+      <line x1="140" y1="201" x2="80" y2="201"/>
+      <line x1="80" y1="201" x2="50" y2="183"/>
+    </g>
+    <!-- Highlighted nodes (sequentially flash on calc) -->
+    <g class="atmo-nodes">
+      <circle cx="50" cy="183" r="3" fill="currentColor" opacity="0.85"/>
+      <circle cx="110" cy="165" r="3.2" fill="rgb(255, 110, 110)" opacity="0.9"/>
+      <circle cx="170" cy="183" r="3" fill="currentColor" opacity="0.85"/>
+      <circle cx="140" cy="201" r="3" fill="currentColor" opacity="0.85"/>
+      <circle cx="80" cy="201" r="3" fill="currentColor" opacity="0.85"/>
+    </g>
+  </svg>
+
+  <!-- Bottom info bar (below tool-shell, mirror of status bar) -->
+  <svg class="shell-bg-deco deco-bottombar" viewBox="0 0 600 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.7" letter-spacing="2">
+      <text x="0" y="16">16:42 · 09-MAY-26</text>
+      <text x="200" y="16">UNIT 0xA7C2</text>
+      <text x="370" y="16">FLUX 4.605</text>
+      <text x="540" y="16">v4.21</text>
+    </g>
+    <g stroke="currentColor" stroke-width="0.5" opacity="0.4">
+      <line x1="155" y1="12" x2="180" y2="12"/>
+      <line x1="328" y1="12" x2="350" y2="12"/>
+      <line x1="495" y1="12" x2="520" y2="12"/>
+    </g>
+  </svg>
+
+  <!-- Top-left logo brand mark (above status bar) -->
+  <svg class="shell-bg-deco deco-logo" viewBox="0 0 240 35" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <!-- V triangle logo -->
+    <path d="M 4 6 L 20 28 L 36 6" stroke="currentColor" fill="none" stroke-width="2" opacity="0.85"/>
+    <path d="M 12 6 L 20 18 L 28 6" stroke="currentColor" fill="none" stroke-width="1.4" opacity="0.7"/>
+    <!-- Logo text -->
+    <text x="50" y="22" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14" fill="currentColor" opacity="0.9" letter-spacing="3" font-weight="600">KINTAI</text>
+    <text x="125" y="22" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="11" fill="currentColor" opacity="0.6" letter-spacing="2">· REV.4</text>
+    <!-- Right side bracket detail -->
+    <g stroke="currentColor" fill="none" stroke-width="1" opacity="0.5">
+      <path d="M 200 5 L 215 5 L 215 30 L 200 30"/>
+    </g>
+    <!-- Tiny status dot in bracket (CSS-animated) -->
+    <circle class="hud-led logo-led" cx="207" cy="17.5" r="2" fill="rgb(120, 240, 180)"/>
+  </svg>
+
+  <!-- Top-center arc gauge (34%) -->
+  <svg class="shell-bg-deco deco-arcgauge" viewBox="0 0 100 50" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background half-circle arc -->
+    <path d="M 10 45 A 35 35 0 0 1 90 45" stroke="currentColor" fill="none" stroke-width="0.8" opacity="0.4"/>
+    <!-- Filled portion (34%, ≈61° from left along the arc) -->
+    <path class="arc-fill" d="M 10 45 A 35 35 0 0 1 27 14" stroke="currentColor" fill="none" stroke-width="2.5" opacity="0.9" pathLength="100"/>
+    <!-- Tick markers -->
+    <g stroke="currentColor" stroke-width="0.7" opacity="0.55">
+      <line x1="10" y1="45" x2="6" y2="48"/>
+      <line x1="50" y1="10" x2="50" y2="4"/>
+      <line x1="90" y1="45" x2="94" y2="48"/>
+    </g>
+    <!-- Triangle indicator at 34% point -->
+    <polygon points="27,14 22,5 32,9" fill="currentColor" opacity="0.9"/>
+    <!-- Number -->
+    <text class="arc-percent" x="50" y="44" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="14" fill="currentColor" opacity="0.9" text-anchor="middle" letter-spacing="1">34%</text>
+  </svg>
+
+  <!-- HOME LOCATION sub-radar (bottom-right outside) -->
+  <svg class="shell-bg-deco deco-homelocation" viewBox="-100 -100 200 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="currentColor" fill="none">
+      <!-- Static rings -->
+      <circle r="35" stroke-width="0.5" opacity="0.65"/>
+      <circle r="60" stroke-width="0.5" opacity="0.55"/>
+      <circle r="85" stroke-width="0.5" opacity="0.45"/>
+      <!-- Tick marks 4 quad -->
+      <g opacity="0.5">
+        <line x1="0" y1="-85" x2="0" y2="-78"/>
+        <line x1="0" y1="78" x2="0" y2="85"/>
+        <line x1="-85" y1="0" x2="-78" y2="0"/>
+        <line x1="78" y1="0" x2="85" y2="0"/>
+      </g>
+      <!-- Crosshair -->
+      <line x1="-90" y1="0" x2="90" y2="0" stroke-width="0.4" opacity="0.4"/>
+      <line x1="0" y1="-90" x2="0" y2="90" stroke-width="0.4" opacity="0.4"/>
+      <!-- Outer arc indicator (98% portion) -->
+      <path class="homeloc-arc" d="M -75,-45 A 88 88 0 1 1 75,-45" stroke-width="2" opacity="0.7" pathLength="100"/>
+      <!-- Map outline (suggesting island / location shape) -->
+      <path d="M -22 -18 Q -10 -28, 4 -22 Q 18 -16, 22 4 Q 26 25, 4 30 Q -22 27, -26 8 Q -30 -5, -22 -18 Z" 
+            stroke-width="0.7" opacity="0.65"/>
+      <!-- Indicator triangles outside -->
+      <polygon points="-78,-50 -68,-55 -68,-45" fill="currentColor" stroke="none" opacity="0.85"/>
+      <polygon points="78,-50 68,-55 68,-45" fill="currentColor" stroke="none" opacity="0.85"/>
+    </g>
+    <!-- Center dot -->
+    <circle r="2" fill="currentColor" opacity="0.85"/>
+    <!-- 98% indicator -->
+    <text class="homeloc-percent" x="-90" y="-65" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="12" fill="currentColor" opacity="0.9" letter-spacing="1">98%</text>
+    <!-- HOME LOCATION label -->
+    <text x="0" y="105" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="10" fill="currentColor" opacity="0.8" letter-spacing="3" text-anchor="middle">HOME LOCATION</text>
+  </svg>
 
   <header class="header">
     <div class="header-pulse" aria-hidden="true"></div>
@@ -1935,7 +3781,7 @@
     </div>
   </header>
 
-  <section class="section">
+  <section class="section" id="input-section">
     <div class="section-label">
       <span style="display: inline-flex; align-items: center; gap: 10px;">
         <span class="sp-hide">↓</span><a href="https://kintaiplus.freee.co.jp/admin" target="_blank" rel="noopener noreferrer" class="kintai-link">勤怠管理Plus</a><span class="sp-hide">からデータ貼り付け↓</span>
@@ -1962,6 +3808,14 @@
         <label for="opt-dedupe">重複日付を除去（最新を採用）</label>
       </div>
     </div>
+
+    <!-- Collapsed-mode bar: visible only when #input-section is .is-collapsed.
+         Click anywhere on the bar to re-open the input. -->
+    <button type="button" class="collapsed-bar" onclick="expandInput()" aria-label="入力データを編集">
+      <span class="collapsed-bar-icon" aria-hidden="true">✏</span>
+      <span class="collapsed-bar-text">入力データを編集</span>
+      <span class="collapsed-bar-arrow" aria-hidden="true">▾</span>
+    </button>
   </section>
 
   <section class="section" id="results-section" hidden>
@@ -1980,9 +3834,154 @@
 
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     ARCHIVE TERMINAL — fixed bottom-right corner module.
+     Opens a HUD-styled modal containing history, trend graph and
+     export/import controls. Designed to blend into the surrounding
+     cockpit decoration; discoverable but not flashy.
+     ═══════════════════════════════════════════════════════════════ -->
+<button
+  type="button"
+  class="archive-terminal"
+  id="archive-terminal"
+  onclick="openArchive()"
+  aria-label="アーカイブターミナルを開く"
+>
+  <span class="at-led" aria-hidden="true"></span>
+  <span class="at-rows">
+    <span class="at-title">◉ ARCHIVE</span>
+    <span class="at-divider"></span>
+    <span class="at-status" id="at-status">STANDBY</span>
+    <span class="at-last" id="at-last"></span>
+  </span>
+  <!-- Decorative corner brackets (HUD signature) -->
+  <span class="at-corner tl" aria-hidden="true"></span>
+  <span class="at-corner tr" aria-hidden="true"></span>
+  <span class="at-corner bl" aria-hidden="true"></span>
+  <span class="at-corner br" aria-hidden="true"></span>
+</button>
+
+<!-- Archive Modal -->
+<div class="archive-modal-backdrop" id="archive-backdrop" hidden onclick="closeArchive(event)">
+  <div class="archive-modal" id="archive-modal" role="dialog" aria-labelledby="archive-modal-title" onclick="event.stopPropagation()">
+    <!-- Corner brackets matching the icon style -->
+    <span class="am-corner tl" aria-hidden="true"></span>
+    <span class="am-corner tr" aria-hidden="true"></span>
+    <span class="am-corner bl" aria-hidden="true"></span>
+    <span class="am-corner br" aria-hidden="true"></span>
+
+    <!-- Header -->
+    <header class="am-header">
+      <span class="am-title" id="archive-modal-title">履歴アーカイブ</span>
+      <button type="button" class="am-close" onclick="closeArchive()" aria-label="閉じる">閉じる</button>
+    </header>
+
+    <!-- Scanline (animated on open) -->
+    <div class="am-scanline" aria-hidden="true"></div>
+
+    <!-- Tabs -->
+    <nav class="am-tabs" role="tablist">
+      <button type="button" class="am-tab is-active" data-tab="history" role="tab" onclick="switchArchiveTab('history')">履歴</button>
+      <button type="button" class="am-tab" data-tab="trend" role="tab" onclick="switchArchiveTab('trend')">推移</button>
+      <button type="button" class="am-tab" data-tab="data" role="tab" onclick="switchArchiveTab('data')">データ</button>
+    </nav>
+
+    <!-- Tab panels -->
+    <div class="am-body">
+      <section class="am-panel is-active" data-panel="history">
+        <div class="am-history-table" id="am-history-table"></div>
+      </section>
+
+      <section class="am-panel" data-panel="trend">
+        <div class="am-trend-summary" id="am-trend-summary"></div>
+        <div class="am-trend-chart" id="am-trend-chart"></div>
+        <div class="am-trend-target">
+          <label for="am-target-input" class="am-target-label">目標残業ライン</label>
+          <input type="text" class="am-target-input" id="am-target-input" placeholder="+10:00" />
+          <button type="button" class="am-target-save" onclick="saveTarget()">保存</button>
+          <span class="am-target-hint">h:mm 形式（例: +10:00, -2:30）</span>
+        </div>
+      </section>
+
+      <section class="am-panel" data-panel="data">
+        <div class="am-section">
+          <div class="am-section-title">エクスポート</div>
+          <div class="am-btn-row">
+            <button type="button" class="am-action-btn" onclick="exportHistoryAs('csv')">CSV 書き出し</button>
+            <button type="button" class="am-action-btn" onclick="exportHistoryAs('json')">JSON 書き出し</button>
+          </div>
+        </div>
+        <div class="am-section">
+          <div class="am-section-title">インポート</div>
+          <label class="am-drop-zone" id="am-drop-zone">
+            <input type="file" id="am-import-file" accept=".csv,.json,application/json,text/csv" hidden />
+            <span class="am-drop-text">ファイルを選択 または ドラッグ＆ドロップ</span>
+            <span class="am-drop-hint">CSV / JSON ・ 同月キーがあればインポート側を優先</span>
+          </label>
+        </div>
+        <div class="am-section">
+          <div class="am-section-title danger">全データ削除</div>
+          <button type="button" class="am-danger-btn" onclick="confirmDeleteAll()">全履歴を削除</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Confirmation dialog (overlay inside modal) -->
+    <div class="am-confirm" id="am-confirm" hidden>
+      <div class="am-confirm-panel">
+        <div class="am-confirm-title" id="am-confirm-title">確認</div>
+        <div class="am-confirm-body" id="am-confirm-body"></div>
+        <div class="am-confirm-actions">
+          <button type="button" class="am-confirm-cancel" onclick="closeConfirm()">キャンセル</button>
+          <button type="button" class="am-confirm-ok" id="am-confirm-ok">実行</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PACE MODAL — compact floating popover that calculates the per-day
+     adjustment needed to settle net OT to zero (or to a target).
+     Themed to match the main tool body (uses CSS variables for
+     light/dark mode adaptation).
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="pace-modal-backdrop" id="pace-backdrop" hidden onclick="closePaceModal(event)">
+  <div class="pace-modal" role="dialog" aria-labelledby="pace-modal-title" onclick="event.stopPropagation()">
+    <header class="pace-modal-header">
+      <span class="pace-modal-title" id="pace-modal-title">消化ペース計算</span>
+      <button type="button" class="pace-modal-close" onclick="closePaceModal()" aria-label="閉じる">閉じる</button>
+    </header>
+
+    <div class="pace-modal-body">
+      <div class="pace-modal-net-line">
+        <span class="pace-modal-net-label">現在の差引残業</span>
+        <span class="pace-modal-net-value" id="pace-modal-net">—</span>
+      </div>
+
+      <div class="pace-modal-input-line">
+        <label class="pace-modal-input-label" for="pace-remaining-days">残出勤日数</label>
+        <input type="number" class="pace-modal-input" id="pace-remaining-days" min="0" max="31" placeholder="日" />
+        <span class="pace-modal-input-suffix">日</span>
+      </div>
+
+      <div class="pace-modal-output" id="pace-output">残出勤日数を入力してください</div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 (function() {
   const STORAGE_KEY = 'work_hours_calc_v1';
+  const HISTORY_STORAGE_KEY = 'work_hours_history_v1';
+
+  // Shared state — populated each time render() runs so the archive
+  // terminal can access the most recent computed totals.
+  window.__workHoursState = window.__workHoursState || {
+    lastResult: null,   // { monthKey, totalMin, netOvertimeMin, attendanceCount, ... }
+    history: null,      // loaded lazily; { records: {...}, targetOvertimeMin, ... }
+  };
 
   // ============================================================
   // Theme handling
@@ -2177,6 +4176,9 @@
       else if (diff < 0) { grossUnderMin += -diff; underDayCount++; }
     }
 
+    const dailyMinutes = usable.map((d) => d.workMinutes);
+    const sparkline = buildSparkline(dailyMinutes, { refValue: 480, height: 30 });
+
     const stats = `
       <div class="stats">
         <div class="stat-card accent-work">
@@ -2185,6 +4187,7 @@
             <p class="stat-value" data-count-type="hm" data-count-target="${totalMin}">${fmtHM(totalMin, true)}</p>
           </div>
           <p class="stat-sub">${(totalMin/60).toFixed(1)} 時間</p>
+          ${sparkline}
         </div>
         <div class="stat-card accent-neutral">
           <p class="stat-label">8時間換算</p>
@@ -2192,6 +4195,7 @@
             <p class="stat-value" data-count-type="daysHours" data-count-target="${totalMin}">${fmtDaysHours(totalMin, true)}</p>
           </div>
           <p class="stat-sub">8時間 = 1日</p>
+          ${sparkline}
         </div>
         <div class="stat-card accent-leave">
           <p class="stat-label">出勤日数</p>
@@ -2199,6 +4203,7 @@
             <p class="stat-value" data-count-type="days" data-count-target="${attendanceCount}">${attendanceCount}<span class="stat-unit">日</span></p>
           </div>
           <p class="stat-sub">実出勤 ${realAttendCount}日 / 有休等 ${paidLeaveCount}日${includePaid ? '' : '（除外中）'}</p>
+          ${sparkline}
         </div>
       </div>
 
@@ -2215,7 +4220,7 @@
             <p class="ot-meta">8h不足の合計（${underDayCount}日）</p>
           </div>
           <div class="ot-op">=</div>
-          <div class="ot-cell eq">
+          <div class="ot-cell eq" data-net-min="${netOvertimeMin}" role="button" tabindex="0" onclick="openPaceModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPaceModal();}" aria-label="クリックで消化ペース計算を開く">
             <p class="ot-num" data-count-type="hm-signed" data-count-sign="${netOvertimeMin >= 0 ? '+' : '−'}" data-count-target="${Math.abs(netOvertimeMin)}">${netOvertimeMin >= 0 ? '+ ' : '− '}${fmtHM(Math.abs(netOvertimeMin))}</p>
             <p class="ot-meta">差引残業（net）</p>
           </div>
@@ -2357,6 +4362,231 @@
     `;
 
     wrap.innerHTML = dedupeNotice + stats + breakdown + chart;
+
+    // Save the latest computed totals into shared state so the archive
+    // terminal can read them when "履歴に追加" is invoked.
+    const detectedMonthKey = detectMonthKey(parsed);
+
+    // Estimate remaining workdays for the pace calculator: days that
+    // are scheduled to work (not 公休, not 有休) AND have no record yet.
+    // Used by the pace modal to auto-fill the input.
+    const suggestedRemainingDays = parsed.filter(d =>
+      !d.isHoliday && !d.isPaidLeave && d.workMinutes === 0
+    ).length;
+
+    window.__workHoursState.lastResult = {
+      monthKey: detectedMonthKey,
+      totalMin,
+      netOvertimeMin,
+      attendanceCount,
+      realAttendCount,
+      paidLeaveCount,
+      grossOverMin,
+      grossUnderMin,
+      expectedMin,
+      includePaid,
+      recordCount: parsed.length,
+      suggestedRemainingDays,
+      computedAt: new Date().toISOString(),
+    };
+
+    // Reset the pace modal input to the new suggestion (or clear if 0).
+    // New calculation = fresh context, so any prior manual entry is replaced.
+    const paceInput = document.getElementById('pace-remaining-days');
+    if (paceInput) {
+      paceInput.value = suggestedRemainingDays > 0 ? String(suggestedRemainingDays) : '';
+    }
+
+    // Wire up the inline pace calculator and refresh the archive terminal
+    // status (record count + last saved month indicator).
+    mountPaceBar();
+    refreshArchiveTerminal();
+  }
+
+  // ============================================================
+  // Pace modal — floating popover opened from the ▷ button in eq cell
+  // ============================================================
+  // Reads the current net OT from the eq cell's data-net-min attribute
+  // and lets the user enter remaining workdays to see the per-day
+  // adjustment needed to settle to zero.
+  //
+  // No mount is needed at render time — the input listener is bound
+  // once on initialisation; openPaceModal() refreshes the displayed
+  // net value each time it's invoked.
+  function mountPaceBar() {
+    // Kept as a stub for backwards-compat with the render() call.
+    // The actual binding happens in initPaceModal() during init.
+  }
+
+  let _paceModalEscHandler = null;
+
+  function initPaceModal() {
+    const input = document.getElementById('pace-remaining-days');
+    if (input && !input.dataset.bound) {
+      input.addEventListener('input', updatePaceOutput);
+      input.dataset.bound = '1';
+    }
+  }
+
+  function updatePaceOutput() {
+    const cell = document.querySelector('.ot-cell.eq');
+    const input = document.getElementById('pace-remaining-days');
+    const output = document.getElementById('pace-output');
+    if (!cell || !input || !output) return;
+
+    const netMin = parseInt(cell.getAttribute('data-net-min'), 10) || 0;
+    const days = parseInt(input.value, 10);
+
+    if (!Number.isFinite(days) || days <= 0) {
+      output.textContent = '残出勤日数を入力してください';
+      output.classList.remove('is-pos', 'is-neg', 'is-zero');
+      return;
+    }
+
+    // To settle net=0, each day must absorb -netMin/days.
+    const perDay = -netMin / days;
+    const absPerDay = Math.abs(Math.round(perDay));
+    if (Math.abs(perDay) < 1) {
+      output.textContent = `残業±0の消化ペース＝±0分 / 1日（消化済み）`;
+      output.classList.remove('is-pos', 'is-neg');
+      output.classList.add('is-zero');
+    } else if (perDay > 0) {
+      // netMin is negative → need to work more each day to catch up.
+      output.textContent = `残業±0の消化ペース＝残業+${fmtHM(absPerDay)} / 1日`;
+      output.classList.remove('is-neg', 'is-zero');
+      output.classList.add('is-pos');
+    } else {
+      // netMin is positive → need to leave early each day to absorb surplus.
+      output.textContent = `残業±0の消化ペース＝早退−${fmtHM(absPerDay)} / 1日`;
+      output.classList.remove('is-pos', 'is-zero');
+      output.classList.add('is-neg');
+    }
+  }
+
+  window.openPaceModal = function() {
+    const backdrop = document.getElementById('pace-backdrop');
+    const cell = document.querySelector('.ot-cell.eq');
+    const netDisplay = document.getElementById('pace-modal-net');
+    if (!backdrop) return;
+
+    // Refresh the displayed net value from the current eq cell.
+    if (cell && netDisplay) {
+      const netMin = parseInt(cell.getAttribute('data-net-min'), 10) || 0;
+      const sign = netMin >= 0 ? '+' : '−';
+      netDisplay.textContent = `${sign} ${fmtHM(Math.abs(netMin))}`;
+      netDisplay.classList.remove('is-pos', 'is-neg', 'is-zero');
+      if (netMin > 0) netDisplay.classList.add('is-pos');
+      else if (netMin < 0) netDisplay.classList.add('is-neg');
+      else netDisplay.classList.add('is-zero');
+    }
+
+    backdrop.hidden = false;
+    void backdrop.offsetWidth;
+    backdrop.classList.add('is-open');
+
+    initPaceModal();
+    // Re-run output update so the message reflects the (possibly changed) net value.
+    updatePaceOutput();
+
+    // Focus the input after the open transition starts.
+    setTimeout(() => {
+      const input = document.getElementById('pace-remaining-days');
+      if (input) input.focus();
+    }, 80);
+
+    _paceModalEscHandler = (e) => { if (e.key === 'Escape') window.closePaceModal(); };
+    document.addEventListener('keydown', _paceModalEscHandler);
+  };
+
+  window.closePaceModal = function(evt) {
+    if (evt && evt.target && evt.target.id !== 'pace-backdrop') return;
+    const backdrop = document.getElementById('pace-backdrop');
+    if (!backdrop) return;
+    backdrop.classList.remove('is-open');
+    setTimeout(() => { backdrop.hidden = true; }, 230);
+    if (_paceModalEscHandler) {
+      document.removeEventListener('keydown', _paceModalEscHandler);
+      _paceModalEscHandler = null;
+    }
+  };
+
+  // ============================================================
+  // Month key detection
+  // ============================================================
+  // Inspects parsed records and returns the most likely "YYYY-MM" key.
+  // Records carry only MM/DD (no year), so we assume current year unless
+  // the detected month is far in the future (in which case we use last
+  // year, since the data is likely from a previous fiscal period).
+  function detectMonthKey(parsed) {
+    if (!parsed || !parsed.length) return null;
+    const monthCounts = {};
+    for (const d of parsed) {
+      if (!d.date) continue;
+      const mm = d.date.split('/')[0];
+      monthCounts[mm] = (monthCounts[mm] || 0) + 1;
+    }
+    let bestMm = null, bestCount = 0;
+    for (const mm in monthCounts) {
+      if (monthCounts[mm] > bestCount) {
+        bestCount = monthCounts[mm];
+        bestMm = mm;
+      }
+    }
+    if (!bestMm) return null;
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const detectedMonth = parseInt(bestMm, 10);
+    // Heuristic: if detected month is more than 2 months ahead of now,
+    // it's probably last year's data being reviewed.
+    let year = now.getFullYear();
+    if (detectedMonth > currentMonth + 2) year -= 1;
+    return `${year}-${bestMm}`;
+  }
+
+  // ============================================================
+  // History storage layer
+  // ============================================================
+  function loadHistory() {
+    if (window.__workHoursState.history) return window.__workHoursState.history;
+    try {
+      const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        window.__workHoursState.history = Object.assign(
+          { records: {}, targetOvertimeMin: 600 },
+          parsed
+        );
+        return window.__workHoursState.history;
+      }
+    } catch (e) { /* fall through to default */ }
+    window.__workHoursState.history = { records: {}, targetOvertimeMin: 600 };
+    return window.__workHoursState.history;
+  }
+
+  function persistHistory() {
+    try {
+      localStorage.setItem(
+        HISTORY_STORAGE_KEY,
+        JSON.stringify(window.__workHoursState.history)
+      );
+    } catch (e) { /* quota? silently fail */ }
+  }
+
+  function getSortedRecords() {
+    const h = loadHistory();
+    return Object.keys(h.records)
+      .sort()
+      .reverse()
+      .map(k => h.records[k]);
+  }
+
+  function recordCount() {
+    return Object.keys(loadHistory().records).length;
+  }
+
+  function latestRecordMonthKey() {
+    const keys = Object.keys(loadHistory().records).sort();
+    return keys.length ? keys[keys.length - 1] : null;
   }
 
   // ============================================================
@@ -2473,7 +4703,8 @@
     });
   }
 
-  window.calculate = function() {
+  window.calculate = function(opts) {
+    opts = opts || {};
     const text = document.getElementById('att-input').value;
     const includePaid = document.getElementById('opt-paid-leave').checked;
     const doDedupe = document.getElementById('opt-dedupe').checked;
@@ -2487,14 +4718,21 @@
       dupReport = result.dupReport;
     }
 
-    // After a successful calculation, gently collapse the input area so the
-    // result panel can take focus. Only when there's actually parsed content;
-    // otherwise the user likely wants to fix their input.
+    // After a successful calculation, collapse the entire input section
+    // (label, textarea, and controls) down to a single edit-mode bar so the
+    // result panel — especially the OT breakdown — can fit in view on small
+    // screens. Only when there's actually parsed content; otherwise the user
+    // likely wants to fix their input.
     const collapseInput = () => {
-      if (parsed.length > 0) {
-        const ta = document.getElementById('att-input');
-        if (ta) ta.classList.add('is-collapsed');
-      }
+      if (parsed.length === 0) return;
+
+      const inputSection = document.getElementById('input-section');
+      const ta = document.getElementById('att-input');
+
+      // Collapse the whole section (preferred) and keep the textarea-only
+      // collapsed class as a harmless fallback.
+      if (inputSection) inputSection.classList.add('is-collapsed');
+      if (ta) ta.classList.add('is-collapsed');
     };
 
     // Visual feedback on the primary button
@@ -2508,6 +4746,7 @@
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!reduce) {
         triggerShootingStars();
+        triggerHudPulse();
         const original = btn.innerHTML;
         btn.classList.add('is-calculating');
         btn.innerHTML = '<span class="calc-spinner"></span>計算中';
@@ -2518,6 +4757,7 @@
           runCountUps();
           collapseInput();
           saveState();
+          if (opts.autoSave !== false) autoSaveToHistory();
         }, 220);
         return;
       }
@@ -2527,6 +4767,7 @@
     runCountUps();
     collapseInput();
     saveState();
+    if (opts.autoSave !== false) autoSaveToHistory();
   };
 
   // Fire shooting stars across the screen — used as a one-shot accent
@@ -2541,6 +4782,217 @@
     });
   }
 
+  // Flash all HUD decorations (globe, radar, panels, etc.) with a staggered
+  // brightness pulse — fires when the user presses the calculate button.
+  // Three-phase decay:
+  //   1. is-hud-pulsing  (0 - 2700ms): full HUD flash, fast rotation, bright
+  //   2. is-hud-cooldown (2700 - 4300ms): intermediate speed/brightness;
+  //                                       vscale does a small secondary sway
+  //   3. (after 4300ms): everything back to default
+  function triggerHudPulse() {
+    document.body.classList.remove('is-hud-pulsing');
+    document.body.classList.remove('is-hud-cooldown');
+    // force reflow so the animation can replay on consecutive triggers
+    void document.body.offsetWidth;
+    document.body.classList.add('is-hud-pulsing');
+    scrambleBottomBar();
+    countUpPercentages();
+
+    // Phase 1 → Phase 2 (cooldown)
+    setTimeout(() => {
+      document.body.classList.remove('is-hud-pulsing');
+      document.body.classList.add('is-hud-cooldown');
+    }, 2700);
+    // Phase 2 → default
+    setTimeout(() => {
+      document.body.classList.remove('is-hud-cooldown');
+    }, 4300);
+
+    // Cell-flash on the breakdown cells (left → middle → right).
+    // Render delay 220ms + last stagger 1.2s + flash 1.3s ≈ 2720ms;
+    // buffer to 3000ms.
+    document.body.classList.remove('is-orbit-pulsing');
+    void document.body.offsetWidth;
+    document.body.classList.add('is-orbit-pulsing');
+    setTimeout(() => {
+      document.body.classList.remove('is-orbit-pulsing');
+    }, 3000);
+  }
+
+  // Count up the displayed numbers in the HUD (arc gauge percentages, bar
+  // values, GRAVITY decimal, DEFAULT TARGETING %) during the calc pulse.
+  // Uses a slot-machine "scramble" effect: each digit position rapid-cycles
+  // random 0-9 values, then locks in left-to-right at staggered settle
+  // times — so the numbers "click into place" instead of smoothly counting.
+  function countUpPercentages() {
+    countUpText('.arc-percent',     34,    1700, '%', 0);
+    countUpText('.homeloc-percent', 98,    1700, '%', 0);
+    countUpText('.bar1-value',      657,   2000, '',  0);
+    countUpText('.bar2-value',      240,   2000, '',  0);
+    countUpText('.bar3-value',      140,   2000, '',  0);
+    countUpText('.gravity-value',   7.605, 2000, '',  3);
+    countUpText('.targeting-value', 65,    1700, '%', 0);
+  }
+
+  // Slot-machine scramble: rapid-cycle random digits at each position,
+  // then lock them in from left to right at staggered "settle" times.
+  // - selector  : CSS selector of the text element
+  // - finalValue: the target number
+  // - durationMs: total animation duration
+  // - suffix    : optional suffix (e.g. '%')
+  // - decimals  : number of decimal places to display (default 0)
+  function countUpText(selector, finalValue, durationMs, suffix, decimals) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    decimals = decimals || 0;
+    suffix = suffix || '';
+
+    const finalStr = Number(finalValue).toFixed(decimals);
+    const chars = finalStr.split('');
+
+    // Build settle threshold (0..1) for each character. Digits stagger
+    // left-to-right between settleStart and settleEnd; non-digits ('.')
+    // are always considered settled.
+    const digitIndices = [];
+    for (let i = 0; i < chars.length; i++) {
+      if (/\d/.test(chars[i])) digitIndices.push(i);
+    }
+    const numDigits = digitIndices.length;
+    const settleStart = 0.50;
+    const settleEnd   = 0.95;
+    const settleAt = chars.map(() => 0);
+    digitIndices.forEach((charIdx, di) => {
+      const t = numDigits === 1
+        ? settleEnd
+        : settleStart + (settleEnd - settleStart) * (di / (numDigits - 1));
+      settleAt[charIdx] = t;
+    });
+
+    const startTime = performance.now();
+    function tick() {
+      const elapsed = performance.now() - startTime;
+      const t = elapsed / durationMs;
+      if (t >= 1) {
+        el.textContent = finalStr + suffix;
+        return;
+      }
+      let result = '';
+      for (let i = 0; i < chars.length; i++) {
+        if (/\d/.test(chars[i])) {
+          if (t >= settleAt[i]) {
+            result += chars[i];
+          } else {
+            result += Math.floor(Math.random() * 10).toString();
+          }
+        } else {
+          result += chars[i];
+        }
+      }
+      el.textContent = result + suffix;
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Build a small inline-SVG sparkline showing daily workMinutes as bars.
+  // - values    : array of numbers (workMinutes per day, chronological)
+  // - opts.refValue : reference line in same unit (default 480 = 8h)
+  // - opts.height   : svg height in px (default 30)
+  // Each bar gets a staggered animation-delay so the chart "draws in"
+  // left-to-right (CSS animation defined in .sparkline-wrap rect).
+  function buildSparkline(values, opts) {
+    if (!values || values.length === 0) return '';
+    opts = opts || {};
+    const width    = 200;
+    const height   = opts.height   || 30;
+    const refValue = opts.refValue !== undefined ? opts.refValue : 480;
+
+    const maxVal = Math.max.apply(null, values.concat([refValue])) * 1.10;
+    if (maxVal <= 0) return '';
+
+    const slot = width / values.length;
+    const gap  = Math.min(1.5, slot * 0.18);
+    const barWidth = Math.max(0.8, slot - gap);
+
+    // Stagger delays for left-to-right draw-in. Cap per-bar delay so very
+    // long arrays still finish drawing within ~0.7s.
+    const totalStaggerMs = 600;
+    const perBarMs = values.length > 1
+      ? Math.min(40, totalStaggerMs / (values.length - 1))
+      : 0;
+
+    let bars = '';
+    for (let i = 0; i < values.length; i++) {
+      const v = values[i];
+      const barH = Math.max(0.8, (v / maxVal) * height);
+      const x = i * slot + gap / 2;
+      const y = height - barH;
+      const isOver = v >= refValue;
+      const fillOpacity = isOver ? 0.95 : 0.50;
+      const delay = (i * perBarMs).toFixed(0);
+      bars += '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2)
+            + '" width="' + barWidth.toFixed(2) + '" height="' + barH.toFixed(2)
+            + '" fill="var(--card-accent, currentColor)" opacity="' + fillOpacity
+            + '" rx="0.6" style="animation-delay:' + delay + 'ms"/>';
+    }
+
+    const refY = height - (refValue / maxVal) * height;
+    const refLine = '<line x1="0" y1="' + refY.toFixed(2)
+                  + '" x2="' + width + '" y2="' + refY.toFixed(2)
+                  + '" stroke="currentColor" stroke-dasharray="2,2"'
+                  + ' opacity="0.30" stroke-width="0.5"/>';
+
+    const minVal = Math.min.apply(null, values);
+    const maxValRaw = Math.max.apply(null, values);
+    const meta =
+      '<div class="sparkline-meta">'
+      + '<span><span class="sparkline-label">MIN</span>' + (minVal/60).toFixed(1) + 'h</span>'
+      + '<span><span class="sparkline-label">' + values.length + ' DAYS</span></span>'
+      + '<span><span class="sparkline-label">MAX</span>' + (maxValRaw/60).toFixed(1) + 'h</span>'
+      + '</div>';
+
+    return '<div class="sparkline-wrap" aria-hidden="true">'
+         + '<svg viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none"'
+         + ' style="height:' + height + 'px;">'
+         + refLine + bars
+         + '</svg>'
+         + meta
+         + '</div>';
+  }
+
+  // Scramble digits in the bottom HUD bar (timestamp / unit / flux / version)
+  // so the values appear to be cycling. Probability of scrambling decreases
+  // over time so the values "lock in" to the original by the end.
+  function scrambleBottomBar() {
+    const texts = document.querySelectorAll('.deco-bottombar text');
+    if (!texts.length) return;
+    const originals = Array.from(texts).map((t) => t.textContent);
+    const startTime = performance.now();
+    const totalMs = 1300;
+
+    function tick() {
+      const elapsed = performance.now() - startTime;
+      if (elapsed >= totalMs) {
+        texts.forEach((t, i) => { t.textContent = originals[i]; });
+        return;
+      }
+      const progress = elapsed / totalMs;
+      const scrambleChance = 1 - progress;
+      texts.forEach((t, i) => {
+        const orig = originals[i];
+        const out = orig.split('').map((ch) => {
+          if (/\d/.test(ch) && Math.random() < scrambleChance) {
+            return String(Math.floor(Math.random() * 10));
+          }
+          return ch;
+        }).join('');
+        t.textContent = out;
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
   window.clearInput = function() {
     if (!confirm('入力データと結果をクリアしますか？（テーマ設定は保持されます）')) return;
     const ta = document.getElementById('att-input');
@@ -2548,6 +5000,8 @@
       ta.value = '';
       ta.classList.remove('is-collapsed');
     }
+    const inputSection = document.getElementById('input-section');
+    if (inputSection) inputSection.classList.remove('is-collapsed');
     document.getElementById('results').innerHTML = '';
     const section = document.getElementById('results-section');
     if (section) section.hidden = true;
@@ -2555,6 +5009,816 @@
     if (footnote) footnote.hidden = true;
     saveState();
   };
+
+  // Expand the collapsed input section back to its full state. Triggered by
+  // clicking the "✏ 入力データを編集" bar that appears in collapsed mode.
+  window.expandInput = function() {
+    const inputSection = document.getElementById('input-section');
+    const ta = document.getElementById('att-input');
+    if (inputSection) inputSection.classList.remove('is-collapsed');
+    if (ta) ta.classList.remove('is-collapsed');
+
+    // Scroll back to the top so the input area is fully visible, then put
+    // focus on the textarea after the scroll has had a moment to start.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => { if (ta) ta.focus(); }, 120);
+  };
+
+  // ============================================================
+  // Archive Terminal — open/close, tab switching, status refresh
+  // ============================================================
+  function refreshArchiveTerminal() {
+    const el = document.getElementById('archive-terminal');
+    if (!el) return;
+    const count = recordCount();
+    const lastKey = latestRecordMonthKey();
+    const statusEl = document.getElementById('at-status');
+    const lastEl = document.getElementById('at-last');
+    if (count === 0) {
+      el.classList.remove('has-records');
+      if (statusEl) statusEl.textContent = 'STANDBY';
+      if (lastEl) lastEl.textContent = '';
+    } else {
+      el.classList.add('has-records');
+      if (statusEl) statusEl.textContent = `${count} REC`;
+      if (lastEl) lastEl.textContent = lastKey ? `LAST: ${lastKey}` : '';
+    }
+  }
+
+  window.openArchive = function() {
+    // Fast path: if a past-month save is pending, open the archive
+    // modal AND immediately surface the year/month confirmation dialog
+    // on top of it. (The confirm dialog is absolutely-positioned inside
+    // the archive modal, so the modal must be open first.)
+    if (_pendingPastMonthSave) {
+      setArchiveIconPending(null);
+      openArchiveAtHistoryTab();
+      window.addCurrentToHistory();
+      return;
+    }
+    const backdrop = document.getElementById('archive-backdrop');
+    const terminal = document.getElementById('archive-terminal');
+    if (!backdrop) return;
+    backdrop.hidden = false;
+    // Force reflow so the transition runs from the hidden starting state.
+    void backdrop.offsetWidth;
+    backdrop.classList.add('is-open');
+    if (terminal) terminal.classList.add('is-open');
+    document.addEventListener('keydown', _archiveEscHandler);
+    renderArchiveTab('history');
+    refreshArchiveTerminal();
+  };
+
+  window.closeArchive = function(evt) {
+    // If invoked by backdrop click, only close when the click is on the backdrop itself.
+    if (evt && evt.target && evt.target.id !== 'archive-backdrop' && evt.type === 'click') {
+      // Only block close if click originated inside the modal; allow direct close calls.
+      if (evt.currentTarget !== evt.target) return;
+    }
+    const backdrop = document.getElementById('archive-backdrop');
+    const terminal = document.getElementById('archive-terminal');
+    if (!backdrop) return;
+    backdrop.classList.remove('is-open');
+    if (terminal) terminal.classList.remove('is-open');
+    setTimeout(() => { backdrop.hidden = true; }, 250);
+    document.removeEventListener('keydown', _archiveEscHandler);
+    closeConfirm();
+  };
+
+  function _archiveEscHandler(e) {
+    if (e.key === 'Escape') window.closeArchive();
+  }
+
+  window.switchArchiveTab = function(tabName) {
+    document.querySelectorAll('.am-tab').forEach(t => {
+      t.classList.toggle('is-active', t.getAttribute('data-tab') === tabName);
+    });
+    document.querySelectorAll('.am-panel').forEach(p => {
+      p.classList.toggle('is-active', p.getAttribute('data-panel') === tabName);
+    });
+    renderArchiveTab(tabName);
+  };
+
+  function renderArchiveTab(tabName) {
+    if (tabName === 'history') renderHistoryTab();
+    else if (tabName === 'trend') renderTrendTab();
+    else if (tabName === 'data') renderDataTab();
+  }
+
+  // ============================================================
+  // HISTORY tab — list of saved months, with edit/delete
+  // ============================================================
+  function renderHistoryTab() {
+    const container = document.getElementById('am-history-table');
+    if (!container) return;
+    const records = getSortedRecords();
+    if (records.length === 0) {
+      container.innerHTML = `
+        <div class="am-empty-state">
+          <div class="standby">履歴はまだありません</div>
+          <div>計算を実行すると、当月分は自動で履歴に追加されます</div>
+        </div>
+      `;
+      return;
+    }
+    const headerRow = `
+      <div class="am-history-row is-header">
+        <div class="am-history-cell month">月</div>
+        <div class="am-history-cell">労働合計</div>
+        <div class="am-history-cell">差引残業</div>
+        <div class="am-history-cell">日数</div>
+        <div class="am-history-cell timestamp">保存日時</div>
+        <div class="am-history-actions"></div>
+      </div>`;
+    const rows = records.map(r => {
+      const net = r.netOvertimeMin || 0;
+      const netClass = net >= 0 ? 'net-pos' : 'net-neg';
+      const netSign = net >= 0 ? '+' : '−';
+      const savedDate = r.savedAt ? new Date(r.savedAt) : null;
+      const savedStr = savedDate
+        ? `${String(savedDate.getMonth()+1).padStart(2,'0')}-${String(savedDate.getDate()).padStart(2,'0')} ${String(savedDate.getHours()).padStart(2,'0')}:${String(savedDate.getMinutes()).padStart(2,'0')}`
+        : '';
+      return `
+        <div class="am-history-row" data-month-key="${r.monthKey}">
+          <div class="am-history-cell month">
+            <span class="am-month-text">${r.monthKey}</span>
+          </div>
+          <div class="am-history-cell">${fmtHM(r.totalMin || 0)}</div>
+          <div class="am-history-cell ${netClass}">${netSign} ${fmtHM(Math.abs(net))}</div>
+          <div class="am-history-cell">${r.attendanceCount || 0}</div>
+          <div class="am-history-cell timestamp">${savedStr}</div>
+          <div class="am-history-actions">
+            <button type="button" class="am-icon-btn" title="月キー編集" onclick="editMonthKey('${r.monthKey}')">編集</button>
+            <button type="button" class="am-icon-btn delete" title="削除" onclick="confirmDeleteRecord('${r.monthKey}')">削除</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    container.innerHTML = headerRow + rows;
+  }
+
+  // Inline edit for monthKey — replaces the month cell with an input.
+  window.editMonthKey = function(originalKey) {
+    const row = document.querySelector(`.am-history-row[data-month-key="${originalKey}"]`);
+    if (!row) return;
+    const cell = row.querySelector('.am-history-cell.month');
+    if (!cell) return;
+    cell.innerHTML = `<input type="text" class="am-month-edit-input" value="${originalKey}" placeholder="YYYY-MM" />`;
+    const input = cell.querySelector('.am-month-edit-input');
+    input.focus();
+    input.select();
+    const commit = () => {
+      const newKey = input.value.trim();
+      if (!/^\d{4}-\d{2}$/.test(newKey)) {
+        renderHistoryTab(); // revert
+        return;
+      }
+      if (newKey === originalKey) { renderHistoryTab(); return; }
+      const h = loadHistory();
+      if (h.records[newKey]) {
+        if (!window.confirm(`${newKey} は既に存在します。上書きしますか？`)) {
+          renderHistoryTab();
+          return;
+        }
+      }
+      const rec = h.records[originalKey];
+      delete h.records[originalKey];
+      rec.monthKey = newKey;
+      h.records[newKey] = rec;
+      persistHistory();
+      renderHistoryTab();
+      refreshArchiveTerminal();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') renderHistoryTab();
+    });
+  };
+
+  window.confirmDeleteRecord = function(monthKey) {
+    showConfirm({
+      title: '履歴を削除',
+      body: `${monthKey} の履歴を削除します。`,
+      okLabel: '削除',
+      isDanger: true,
+      onConfirm: () => {
+        const h = loadHistory();
+        delete h.records[monthKey];
+        persistHistory();
+        closeConfirm();
+        renderHistoryTab();
+        refreshArchiveTerminal();
+      },
+    });
+  };
+
+  // ============================================================
+  // Auto-save on calculate
+  // ============================================================
+  // Triggered at the end of calculate() when not invoked with
+  // {autoSave: false}. Saves silently using the detected monthKey,
+  // BUT only for the current calendar month — for past/future months,
+  // the year cannot be safely inferred from paste data alone, so
+  // auto-save is skipped to prevent overwriting a real record with
+  // cross-year data. Past months must be saved via the manual
+  // "履歴に追加" button which includes year/month confirmation.
+  // Pending past-month save state: holds monthKey awaiting year/month
+  // confirmation. When non-null, the archive icon pulses and clicking it
+  // opens the year/month dialog directly instead of the archive panel.
+  let _pendingPastMonthSave = null;
+
+  function setArchiveIconPending(pendingMonthKey) {
+    _pendingPastMonthSave = pendingMonthKey;
+    const launcher = document.getElementById('archive-terminal');
+    if (!launcher) return;
+    if (pendingMonthKey) {
+      launcher.classList.add('is-pending-save');
+      launcher.setAttribute('title', `${pendingMonthKey} の保存待ち — クリックで年月を確認`);
+    } else {
+      launcher.classList.remove('is-pending-save');
+      launcher.removeAttribute('title');
+    }
+  }
+
+  function autoSaveToHistory() {
+    const result = window.__workHoursState.lastResult;
+    if (!result || !result.monthKey) return;
+
+    // Guard 1: only auto-save when the detected month matches the
+    // current calendar month. Otherwise the year is ambiguous.
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    if (result.monthKey !== currentMonthKey) {
+      // Non-current month detected — skip auto-save, notify user, and
+      // light up the archive icon as a clear visual handoff.
+      showToast(`${result.monthKey} のデータは年判定が必要です。右下のアーカイブから保存してください`, true);
+      setArchiveIconPending(result.monthKey);
+      return;
+    }
+
+    const h = loadHistory();
+    const monthKey = result.monthKey;
+    const existed = !!h.records[monthKey];
+
+    // Guard 2: skip auto-save if attendance days dropped sharply
+    // (probably a re-run with incomplete input — user should verify).
+    if (existed) {
+      const prev = h.records[monthKey];
+      const prevDays = prev.attendanceCount || 0;
+      const newDays = result.attendanceCount || 0;
+      const dayDrop = prevDays > 0 ? (prevDays - newDays) / prevDays : 0;
+      const isMajorDrop = dayDrop > 0.4 && (prevDays - newDays) >= 5;
+      if (isMajorDrop) return;
+    }
+
+    doSaveResult(monthKey, result);
+    refreshArchiveTerminal();
+    // Current month auto-save succeeded → clear any pending state
+    // from an earlier past-month attempt in this session.
+    setArchiveIconPending(null);
+
+    // Toast only on initial save for that month; silent on overwrite
+    // (overwrites happen frequently when iterating on the same data).
+    if (!existed) {
+      showToast(`✓ ${monthKey} を履歴に追加しました`);
+    }
+  }
+
+  // ============================================================
+  // "履歴に追加" — save current result with integrity checks
+  // ============================================================
+  // Flow:
+  //   1. Show year/month confirmation dialog (year cannot be detected
+  //      from paste data, so user confirms/edits before save).
+  //   2. If month already saved → show overwrite confirm (with
+  //      integrity warning if attendance dropped significantly).
+  //   3. Save and toast.
+  window.addCurrentToHistory = function() {
+    const result = window.__workHoursState.lastResult;
+    if (!result) {
+      showConfirm({
+        title: '結果がありません',
+        body: '先に計算ボタンを押してから、再度お試しください。',
+        okLabel: 'OK',
+        onConfirm: closeConfirm,
+        hideCancel: true,
+      });
+      return;
+    }
+
+    // Detected month from paste data; year is best-guess (current year).
+    const detected = result.monthKey || '';
+    const [detectedY, detectedM] = detected.split('-');
+    const defaultY = detectedY || String(new Date().getFullYear());
+    const defaultMNum = parseInt(detectedM || '0', 10) || (new Date().getMonth() + 1);
+
+    showConfirm({
+      title: '履歴に追加 — 対象年月',
+      body: `
+        <div>今、貼り付けたデータを保存しますか？</div>
+        <div>保存する場合は、保存先の年月を確認してください。</div>
+        <div class="ym-confirm-row">
+          <input type="number" id="ym-year-input" class="ym-input" value="${defaultY}" min="2000" max="2099" />
+          <span class="ym-suffix">年</span>
+          <input type="number" id="ym-month-input" class="ym-input ym-input-narrow" value="${defaultMNum}" min="1" max="12" />
+          <span class="ym-suffix">月</span>
+        </div>
+        <div class="ym-confirm-hint">貼付データから ${defaultMNum} 月を検出（年は自動判定できないため必要に応じて修正してください）</div>
+      `,
+      okLabel: '次へ',
+      onConfirm: () => {
+        const yInput = document.getElementById('ym-year-input');
+        const mInput = document.getElementById('ym-month-input');
+        const y = parseInt(yInput && yInput.value, 10);
+        const m = parseInt(mInput && mInput.value, 10);
+        if (!Number.isFinite(y) || y < 2000 || y > 2099) {
+          showToast('年は 2000〜2099 の範囲で入力してください', true);
+          return;
+        }
+        if (!Number.isFinite(m) || m < 1 || m > 12) {
+          showToast('月は 1〜12 の範囲で入力してください', true);
+          return;
+        }
+        const monthKey = `${y}-${String(m).padStart(2, '0')}`;
+        proceedToSaveAfterYM(monthKey, result);
+      },
+    });
+  };
+
+  // Step 2 of "履歴に追加": check for existing month, run integrity
+  // check, then save (or show overwrite confirm).
+  function proceedToSaveAfterYM(monthKey, result) {
+    const h = loadHistory();
+    const existing = h.records[monthKey];
+
+    if (!existing) {
+      doSaveResult(monthKey, result);
+      closeConfirm();
+      showToast(`✓ ${monthKey} を履歴に追加しました`);
+      openArchiveAtHistoryTab();
+      return;
+    }
+
+    // Existing — integrity check on attendance days
+    const prevDays = existing.attendanceCount || 0;
+    const newDays = result.attendanceCount || 0;
+    const prevHours = existing.totalMin || 0;
+    const newHours = result.totalMin || 0;
+    const dayDrop = prevDays > 0 ? (prevDays - newDays) / prevDays : 0;
+    const isMajorDrop = dayDrop > 0.4 && (prevDays - newDays) >= 5;
+
+    let bodyHtml = `${monthKey} は既に保存されています。上書きしますか？<br>
+      <span class="stat-line">前回: ${prevDays}日 / ${fmtHM(prevHours)}</span>
+      <span class="stat-line">今回: ${newDays}日 / ${fmtHM(newHours)}</span>`;
+    if (isMajorDrop) {
+      bodyHtml += `<span class="stat-line warn-line">⚠ 出勤日数が大幅に減少しています。誤った上書きでないか確認してください。</span>`;
+    }
+    showConfirm({
+      title: isMajorDrop ? '上書き確認（要注意）' : '上書き確認',
+      body: bodyHtml,
+      okLabel: isMajorDrop ? 'それでも上書き' : '上書き',
+      isDanger: isMajorDrop,
+      onConfirm: () => {
+        doSaveResult(monthKey, result);
+        closeConfirm();
+        showToast(`✓ ${monthKey} を上書きしました`);
+        openArchiveAtHistoryTab();
+      },
+    });
+  }
+
+  // Open the archive panel directly to the 履歴 tab (used after a
+  // year/month-confirmed save so the user can immediately verify the
+  // record they just added).
+  function openArchiveAtHistoryTab() {
+    const backdrop = document.getElementById('archive-backdrop');
+    const terminal = document.getElementById('archive-terminal');
+    if (!backdrop) return;
+    backdrop.hidden = false;
+    void backdrop.offsetWidth;
+    backdrop.classList.add('is-open');
+    if (terminal) terminal.classList.add('is-open');
+    document.addEventListener('keydown', _archiveEscHandler);
+    renderArchiveTab('history');
+    refreshArchiveTerminal();
+  }
+
+  function doSaveResult(monthKey, result) {
+    const h = loadHistory();
+    h.records[monthKey] = {
+      monthKey,
+      totalMin: result.totalMin,
+      netOvertimeMin: result.netOvertimeMin,
+      attendanceCount: result.attendanceCount,
+      realAttendCount: result.realAttendCount,
+      paidLeaveCount: result.paidLeaveCount,
+      grossOverMin: result.grossOverMin,
+      grossUnderMin: result.grossUnderMin,
+      expectedMin: result.expectedMin,
+      includePaid: result.includePaid,
+      sourceRecordCount: result.recordCount,
+      savedAt: new Date().toISOString(),
+    };
+    persistHistory();
+    renderHistoryTab();
+    refreshArchiveTerminal();
+  }
+
+  // ============================================================
+  // TREND tab — bar chart, target line, average chip
+  // ============================================================
+  function renderTrendTab() {
+    const records = getSortedRecords().slice().reverse(); // chronological
+    const summaryEl = document.getElementById('am-trend-summary');
+    const chartEl = document.getElementById('am-trend-chart');
+    const targetInput = document.getElementById('am-target-input');
+    if (!summaryEl || !chartEl || !targetInput) return;
+
+    const h = loadHistory();
+    const targetMin = (h.targetOvertimeMin == null) ? 600 : h.targetOvertimeMin;
+    targetInput.value = formatTargetForInput(targetMin);
+
+    if (records.length === 0) {
+      summaryEl.innerHTML = '';
+      chartEl.innerHTML = `<div class="am-empty-state"><div class="standby">データがありません</div><div>履歴を追加するとグラフが描画されます</div></div>`;
+      return;
+    }
+
+    // Summary chips
+    const recent = records.slice(-6);
+    const avgRecent = Math.round(recent.reduce((s, r) => s + (r.netOvertimeMin || 0), 0) / recent.length);
+    const allAvg = Math.round(records.reduce((s, r) => s + (r.netOvertimeMin || 0), 0) / records.length);
+    const goalStatus = avgRecent <= targetMin ? '✓' : '⚠';
+    const sign = (n) => n >= 0 ? '+' : '−';
+    summaryEl.innerHTML = `
+      <div class="am-trend-chip">直近${recent.length}ヶ月平均: <strong>${sign(avgRecent)}${fmtHM(Math.abs(avgRecent))}</strong></div>
+      <div class="am-trend-chip">全期間平均: <strong>${sign(allAvg)}${fmtHM(Math.abs(allAvg))}</strong></div>
+      <div class="am-trend-chip">目標 ${sign(targetMin)}${fmtHM(Math.abs(targetMin))} 以内: <strong>${goalStatus}</strong></div>
+    `;
+
+    // Chart
+    chartEl.innerHTML = buildTrendChart(records, targetMin);
+  }
+
+  function buildTrendChart(records, targetMin) {
+    const w = 720, h = 176; // approximate; SVG scales to container
+    const padL = 38, padR = 16, padT = 12, padB = 28;
+    const innerW = w - padL - padR;
+    const innerH = h - padT - padB;
+    const values = records.map(r => r.netOvertimeMin || 0);
+    let maxV = Math.max(targetMin, ...values, 0);
+    let minV = Math.min(0, ...values);
+    // Add a bit of headroom so bars don't touch the top.
+    const range = Math.max(maxV - minV, 60);
+    maxV = maxV + range * 0.1;
+    minV = minV - range * 0.1;
+    const yToPx = (v) => padT + innerH * (1 - (v - minV) / (maxV - minV));
+    const zeroY = yToPx(0);
+    const targetY = yToPx(targetMin);
+    const barW = innerW / records.length;
+    const innerBarW = Math.min(barW * 0.65, 50);
+
+    const yTicks = [];
+    const step = niceTickStep(maxV - minV, 4);
+    for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) {
+      yTicks.push(v);
+    }
+    const yLabelsHtml = yTicks.map(v => {
+      const y = yToPx(v);
+      const txt = (v >= 0 ? '+' : '−') + fmtHM(Math.abs(v));
+      return `<text x="${padL - 4}" y="${y + 3}" class="am-trend-bar-label" text-anchor="end" fill="rgba(180,200,220,0.4)">${txt}</text>`;
+    }).join('');
+
+    const barsHtml = records.map((r, i) => {
+      const v = r.netOvertimeMin || 0;
+      const x = padL + barW * i + (barW - innerBarW) / 2;
+      const y0 = yToPx(0);
+      const y1 = yToPx(v);
+      const top = Math.min(y0, y1);
+      const height = Math.abs(y1 - y0);
+      const cls = v < 0 ? 'am-trend-bar is-neg' : 'am-trend-bar';
+      const sign = v >= 0 ? '+' : '−';
+      const tooltipText = `${r.monthKey} ${sign}${fmtHM(Math.abs(v))}`;
+      return `<g>
+        <rect class="${cls}" x="${x}" y="${top}" width="${innerBarW}" height="${Math.max(height, 1)}" rx="1">
+          <title>${tooltipText}</title>
+        </rect>
+        <text x="${x + innerBarW / 2}" y="${h - 14}" class="am-trend-bar-label">${r.monthKey.slice(2).replace('-','/')}</text>
+      </g>`;
+    }).join('');
+
+    const targetLine = (targetY >= padT && targetY <= padT + innerH)
+      ? `<line class="am-trend-target-line" x1="${padL}" y1="${targetY}" x2="${w - padR}" y2="${targetY}" />
+         <text x="${w - padR + 2}" y="${targetY + 3}" class="am-trend-target-label" text-anchor="start">目標</text>`
+      : '';
+
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      ${yLabelsHtml}
+      <line class="am-trend-zero-line" x1="${padL}" y1="${zeroY}" x2="${w - padR}" y2="${zeroY}" />
+      ${targetLine}
+      ${barsHtml}
+    </svg>`;
+  }
+
+  function niceTickStep(range, count) {
+    const rough = range / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+    const norm = rough / mag;
+    let step;
+    if (norm < 1.5) step = 1;
+    else if (norm < 3) step = 2;
+    else if (norm < 7) step = 5;
+    else step = 10;
+    return step * mag;
+  }
+
+  function formatTargetForInput(min) {
+    const sign = min >= 0 ? '+' : '-';
+    const abs = Math.abs(min);
+    const h = Math.floor(abs / 60);
+    const m = abs % 60;
+    return `${sign}${h}:${String(m).padStart(2,'0')}`;
+  }
+
+  function parseTargetInput(str) {
+    const m = String(str).trim().match(/^([+\-])?\s*(\d+):(\d{1,2})$/);
+    if (!m) return null;
+    const sign = m[1] === '-' ? -1 : 1;
+    const hours = parseInt(m[2], 10);
+    const mins = parseInt(m[3], 10);
+    if (mins >= 60) return null;
+    return sign * (hours * 60 + mins);
+  }
+
+  window.saveTarget = function() {
+    const input = document.getElementById('am-target-input');
+    if (!input) return;
+    const val = parseTargetInput(input.value);
+    if (val === null) {
+      showToast('形式エラー: +10:00 のように入力してください', true);
+      return;
+    }
+    const h = loadHistory();
+    h.targetOvertimeMin = val;
+    persistHistory();
+    renderTrendTab();
+    showToast(`✓ 目標値を ${formatTargetForInput(val)} に保存`);
+  };
+
+  // ============================================================
+  // DATA tab — export, import, delete all
+  // ============================================================
+  function renderDataTab() {
+    // Wire up the file input (idempotent — re-binding is safe)
+    const fileInput = document.getElementById('am-import-file');
+    const dropZone = document.getElementById('am-drop-zone');
+    if (fileInput && !fileInput.dataset.bound) {
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleImportFile(file);
+        fileInput.value = '';
+      });
+      fileInput.dataset.bound = '1';
+    }
+    if (dropZone && !dropZone.dataset.bound) {
+      ['dragenter', 'dragover'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dropZone.classList.add('is-dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('is-dragover');
+        });
+      });
+      dropZone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) handleImportFile(file);
+      });
+      dropZone.dataset.bound = '1';
+    }
+  }
+
+  window.exportHistoryAs = function(format) {
+    const h = loadHistory();
+    const records = getSortedRecords();
+    if (records.length === 0) {
+      showToast('履歴がありません', true);
+      return;
+    }
+    let blob, filename;
+    if (format === 'csv') {
+      const headers = ['monthKey','totalMin','netOvertimeMin','attendanceCount','realAttendCount','paidLeaveCount','grossOverMin','grossUnderMin','expectedMin','sourceRecordCount','includePaid','savedAt'];
+      const rows = records.map(r => headers.map(k => {
+        const v = r[k];
+        if (v == null) return '';
+        const s = String(v);
+        return /[,"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+      }).join(','));
+      const csv = headers.join(',') + '\n' + rows.join('\n');
+      blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }); // BOM for Excel
+      filename = `work_hours_history_${todayStr()}.csv`;
+    } else {
+      blob = new Blob([JSON.stringify(h, null, 2)], { type: 'application/json' });
+      filename = `work_hours_history_${todayStr()}.json`;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`✓ ${filename} を出力しました`);
+  };
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function handleImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      try {
+        if (file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{')) {
+          importJSON(text);
+        } else {
+          importCSV(text);
+        }
+      } catch (err) {
+        showToast(`インポートエラー: ${err.message}`, true);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function importJSON(text) {
+    const data = JSON.parse(text);
+    if (!data || !data.records || typeof data.records !== 'object') {
+      throw new Error('JSON形式が不正です');
+    }
+    mergeRecords(data.records, /*importPriority*/ true);
+    if (typeof data.targetOvertimeMin === 'number') {
+      loadHistory().targetOvertimeMin = data.targetOvertimeMin;
+    }
+    persistHistory();
+    renderHistoryTab();
+    refreshArchiveTerminal();
+    showToast(`✓ ${Object.keys(data.records).length}件をインポート（同月キーはインポート側を優先）`);
+  }
+
+  function importCSV(text) {
+    // Strip BOM if present
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length < 2) throw new Error('データ行がありません');
+    const headers = parseCSVLine(lines[0]);
+    const records = {};
+    for (let i = 1; i < lines.length; i++) {
+      const cells = parseCSVLine(lines[i]);
+      const rec = {};
+      headers.forEach((h, idx) => {
+        const v = cells[idx];
+        if (v === '' || v == null) return;
+        // Numeric coercion for known fields
+        if (['totalMin','netOvertimeMin','attendanceCount','realAttendCount','paidLeaveCount','grossOverMin','grossUnderMin','expectedMin','sourceRecordCount'].includes(h)) {
+          rec[h] = Number(v);
+        } else if (h === 'includePaid') {
+          rec[h] = (v === 'true' || v === '1');
+        } else {
+          rec[h] = v;
+        }
+      });
+      if (rec.monthKey) records[rec.monthKey] = rec;
+    }
+    mergeRecords(records, true);
+    persistHistory();
+    renderHistoryTab();
+    refreshArchiveTerminal();
+    showToast(`✓ ${Object.keys(records).length}件をインポート（同月キーはインポート側を優先）`);
+  }
+
+  function parseCSVLine(line) {
+    const cells = [];
+    let cur = '', inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQuote) {
+        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') { inQuote = false; }
+        else cur += c;
+      } else {
+        if (c === '"') inQuote = true;
+        else if (c === ',') { cells.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    cells.push(cur);
+    return cells;
+  }
+
+  function mergeRecords(incoming, importPriority) {
+    const h = loadHistory();
+    for (const k in incoming) {
+      if (importPriority || !h.records[k]) {
+        h.records[k] = incoming[k];
+      }
+    }
+  }
+
+  window.confirmDeleteAll = function() {
+    const count = recordCount();
+    if (count === 0) {
+      showToast('履歴はありません', true);
+      return;
+    }
+    showConfirm({
+      title: '全履歴削除',
+      body: `保存されている ${count} 件の履歴をすべて削除します。<br>この操作は取り消せません。`,
+      okLabel: '全件削除',
+      isDanger: true,
+      onConfirm: () => {
+        window.__workHoursState.history = { records: {}, targetOvertimeMin: loadHistory().targetOvertimeMin };
+        persistHistory();
+        closeConfirm();
+        renderHistoryTab();
+        renderTrendTab();
+        refreshArchiveTerminal();
+        showToast('✓ 全履歴を削除しました');
+      },
+    });
+  };
+
+  // ============================================================
+  // Confirm overlay
+  // ============================================================
+  function showConfirm({ title, body, okLabel, isDanger, hideCancel, onConfirm }) {
+    const el = document.getElementById('am-confirm');
+    const titleEl = document.getElementById('am-confirm-title');
+    const bodyEl = document.getElementById('am-confirm-body');
+    const okBtn = document.getElementById('am-confirm-ok');
+    const cancelBtn = document.querySelector('.am-confirm-cancel');
+    if (!el || !okBtn) return;
+    titleEl.textContent = title;
+    bodyEl.innerHTML = body;
+    okBtn.textContent = okLabel || '実行';
+    okBtn.classList.toggle('is-danger', !!isDanger);
+    if (cancelBtn) cancelBtn.style.display = hideCancel ? 'none' : '';
+    // Replace handler
+    okBtn.onclick = onConfirm;
+    el.hidden = false;
+  }
+
+  function closeConfirm() {
+    const el = document.getElementById('am-confirm');
+    if (el) el.hidden = true;
+  }
+  window.closeConfirm = closeConfirm;
+
+  // ============================================================
+  // Toast (lightweight notifications)
+  // ============================================================
+  function showToast(message, isError) {
+    let toast = document.getElementById('archive-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'archive-toast';
+      toast.style.cssText = `
+        position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
+        background: rgba(11, 22, 18, 0.95); color: rgba(220, 240, 230, 0.95);
+        border: 1px solid rgba(91, 205, 161, 0.5); border-radius: 4px;
+        padding: 10px 18px; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 12px; letter-spacing: 0.04em; z-index: 200; opacity: 0;
+        transition: opacity 0.22s, transform 0.22s; pointer-events: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      `;
+      document.body.appendChild(toast);
+    }
+    if (isError) {
+      toast.style.borderColor = 'rgba(255, 138, 106, 0.6)';
+      toast.style.color = 'rgba(255, 200, 180, 0.95)';
+    } else {
+      toast.style.borderColor = 'rgba(91, 205, 161, 0.5)';
+      toast.style.color = 'rgba(220, 240, 230, 0.95)';
+    }
+    toast.textContent = message;
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(6px)';
+    }, 2400);
+  }
+
 
 
   // ============================================================
@@ -2595,7 +5859,14 @@
   // Default theme to dark before loading state
   setTheme('dark');
   const loaded = loadState();
-  if (loaded.hasInput) window.calculate();
+  // Initial calc on page load — don't auto-save to history (would duplicate
+  // a record that was already saved at the previous calculate, and would
+  // toast on every page load).
+  if (loaded.hasInput) window.calculate({ autoSave: false });
+
+  // Initialise the archive terminal display (record count, LED state)
+  // even before any calculation is performed in this session.
+  refreshArchiveTerminal();
 
   document.getElementById('opt-paid-leave').addEventListener('change', function() {
     if (document.getElementById('att-input').value.trim()) window.calculate();
@@ -2691,6 +5962,9 @@
         </svg>
         <div class="drag-start-hint">見出しの下からドラッグ開始</div>
         <div class="key-hint">Ctrl<span class="key-plus">+</span>C</div>
+      </div>
+      <div class="copy-modal-notice">
+        <span class="copy-modal-notice-mark">※</span>月末までの日付をドラッグ＆ドロップすると、別機能で<strong>消化ペース</strong>が表示されます。
       </div>
     </div>
   </div>

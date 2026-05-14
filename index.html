@@ -3459,6 +3459,31 @@
   .sparkline-meta .sparkline-label { opacity: 0.55; margin-right: 3px; }
 
 </style>
+
+<script>
+/* ===== ツールアクセスログ送信 (2026-05-15追加) ===== */
+/* このスクリプトはツール本体の動作に一切影響しません */
+(function(){
+  try{
+    var GAS_URL='https://script.google.com/macros/s/AKfycbzlYmFxsRfYxR_4TSQjQlej-L5UGUm4fVp2JmZIpTcUgIijbhhDl_8ymDWyIc_C3UhfhQ/exec';
+    var TOOL_NAME='worktime';
+    var deviceId='';
+    try{
+      deviceId=localStorage.getItem('toolAccessDeviceId');
+      if(!deviceId){
+        deviceId='dev_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
+        localStorage.setItem('toolAccessDeviceId',deviceId);
+      }
+    }catch(e){deviceId='no_ls_'+Date.now();}
+    if(typeof fetch!=='undefined'){
+      fetch(GAS_URL,{
+        method:'POST',
+        body:JSON.stringify({tool:TOOL_NAME,device_id:deviceId,user_agent:navigator.userAgent,referrer:document.referrer||''})
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
 
